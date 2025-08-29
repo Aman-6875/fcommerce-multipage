@@ -40,36 +40,7 @@
         "show_catalog": true,
         "show_prices": true,
         "show_stock": false,
-        "auto_continue": true
-      }
-    },
-    {
-      "id": "product_selection",
-      "type": "choice_from_catalog",
-      "labels": {
-        "en": {
-          "title": "Select Product",
-          "description": "Which product would you like to order?",
-          "format_help": "Type the exact product name from the list above or type the number (e.g., '1' for first product)",
-          "error_not_found": "❌ Please select a product from the available list above",
-          "retry_message": "Please choose from the available products shown above"
-        },
-        "bn": {
-          "title": "পণ্য নির্বাচন করুন",
-          "description": "আপনি কোন পণ্যটি অর্ডার করতে চান?",
-          "format_help": "উপরের তালিকা থেকে সঠিক পণ্যের নাম টাইপ করুন বা নম্বর লিখুন (যেমন: '1' প্রথম পণ্যের জন্য)",
-          "error_not_found": "❌ অনুগ্রহ করে উপরের উপলব্ধ তালিকা থেকে একটি পণ্য নির্বাচন করুন",
-          "retry_message": "অনুগ্রহ করে উপরে দেখানো উপলব্ধ পণ্যগুলো থেকে বেছে নিন"
-        }
-      },
-      "config": {
-        "allow_product_number": true,
-        "allow_product_name": true,
-        "retry_attempts": 3
-      },
-      "validation": {
-        "required": true,
-        "custom": "validate_single_product"
+        "auto_continue": false
       }
     },
     {

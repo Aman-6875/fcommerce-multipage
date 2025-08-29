@@ -169,6 +169,12 @@ class FacebookWebhookController extends Controller
             'current_step_id' => $conversation->getCurrentStep()['id'] ?? 'unknown'
         ]);
 
+        Log::debug('Active conversation found', [
+            'conversation_id' => $conversation->id,
+            'current_step_index' => $conversation->current_step_index,
+            'current_step_id' => $conversation->getCurrentStep()['id'] ?? 'unknown'
+        ]);
+
         // Process message in workflow context
         $workflowEngine = app(\App\Services\WorkflowEngine::class);
         $result = $workflowEngine->processStepInput($conversation, $messageText);

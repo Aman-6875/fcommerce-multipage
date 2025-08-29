@@ -660,42 +660,52 @@ class WorkflowEngine
     private function handleProductCatalog(ConversationState $conversation, string $input): array
     {
         $step = $conversation->getCurrentStep();
-        $language = $conversation->language;
         $config = $step['config'] ?? [];
+        $language = $conversation->language;
+        $clientId = $conversation->workflow->client_id;
 
-        // Auto-continue after showing catalog
-        if ($config['auto_continue'] ?? false) {
-            $conversation->addStepResponse($step['id'], ['catalog_shown' => true]);
-            $nextStep = $conversation->moveToNextStep();
-
-            return [
-                'success' => true,
-                'message' => $this->messageService->getStepMessage($nextStep, $language),
-                'next_step' => $nextStep,
-                'show_next' => true
-            ];
+        // Get available products
+        $products = $this->productSelector->getProductsForFacebookPage($conversation->workflow->facebook_page_id);
+        
+        // Check if input is a number (product index)
+        if (is_numeric(trim($input))) {
+            $index = (int)trim($input) - 1; // Convert to 0-based index
+            if (isset($products[$index])) {
+                $selectedProduct = $products[$index];
+                return $this->handleProductSelected($conversation, $selectedProduct, $step);
+            }
         }
 
-        // Wait for continue
-        $continueKeywords = ['continue', 'next', 'ok', 'okay', 'yes', 'proceed'];
-        $inputLower = strtolower(trim($input));
+        // Try to find product by name
+        $productName = trim($input);
+        $selectedProduct = $products->first(function($product) use ($productName) {
+            return strtolower($product->name) === strtolower($productName);
+        });
 
-        if (in_array($inputLower, $continueKeywords)) {
-            $conversation->addStepResponse($step['id'], ['acknowledged' => true]);
-            $nextStep = $conversation->moveToNextStep();
+        if ($selectedProduct) {
+            return $this->handleProductSelected($conversation, $selectedProduct, $step);
+        }
 
-            return [
-                'success' => true,
-                'message' => $this->messageService->getStepMessage($nextStep, $language),
-                'next_step' => $nextStep,
-                'show_next' => true
-            ];
+        // Try fuzzy matching
+        $suggestions = $products->filter(function($product) use ($productName) {
+            return str_contains(strtolower($product->name), strtolower($productName)) ||
+                   str_contains(strtolower($productName), strtolower($product->name));
+        })->take(3);
+
+        // Increment retry count
+        $conversation->incrementStepRetryCount($step['id']);
+        $retryCount = $conversation->getStepRetryCount($step['id']);
+        $maxRetries = $config['retry_attempts'] ?? 3;
+
+        if ($retryCount >= $maxRetries) {
+            return $this->handleMaxRetriesReached($conversation, $step);
         }
 
         return [
             'success' => false,
-            'message' => $this->messageService->getInfoDisplayWaiting($step, $language),
-            'waiting' => true
+            'message' => $this->messageService->getProductSelectionFromCatalogError($input, $suggestions, $step, $language),
+            'suggestions' => $suggestions->pluck('name')->toArray(),
+            'show_quick_replies' => $suggestions->isNotEmpty()
         ];
     }
 
@@ -769,6 +779,14 @@ class WorkflowEngine
 
         $conversation->addStepResponse($step['id'], ['selected_product_id' => $product->id]);
         $nextStep = $conversation->moveToNextStep();
+
+        Log::info( [
+            'success' => true,
+            'message' => $this->messageService->getProductSelectedSuccess($product, $step, $conversation->language),
+            'selected_product' => $product,
+            'next_step' => $nextStep,
+            'show_next' => true
+        ]);
 
         return [
             'success' => true,
