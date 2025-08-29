@@ -51,6 +51,11 @@ class Client extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
+    public function workflows()
+    {
+        return $this->hasMany(Workflow::class);
+    }
+
     public function services()
     {
         return $this->hasMany(Service::class);

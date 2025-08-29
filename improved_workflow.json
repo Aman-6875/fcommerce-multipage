@@ -1,0 +1,389 @@
+{
+  "steps": [
+    {
+      "id": "welcome",
+      "type": "info_display",
+      "labels": {
+        "en": {
+          "title": "Welcome to Our Store",
+          "description": "Hi! I'm here to help you place an order. Let's get started!",
+          "continue_message": "Ready to help you!"
+        },
+        "bn": {
+          "title": "আমাদের দোকানে স্বাগতম",
+          "description": "হাই! আমি আপনাকে অর্ডার দিতে সাহায্য করব। শুরু করা যাক!",
+          "continue_message": "আপনাকে সাহায্য করতে প্রস্তুত!"
+        }
+      },
+      "config": {
+        "auto_continue": true
+      }
+    },
+    {
+      "id": "show_products",
+      "type": "product_catalog",
+      "labels": {
+        "en": {
+          "title": "Our Available Products",
+          "description": "Here are our available products. Please take a look:",
+          "continue_message": "Ready to select products!",
+          "format_help": "Type the product name you want to order from the list above."
+        },
+        "bn": {
+          "title": "আমাদের পণ্যসমূহ",
+          "description": "আমাদের উপলব্ধ পণ্যগুলো দেখুন:",
+          "continue_message": "পণ্য নির্বাচনের জন্য প্রস্তুত!",
+          "format_help": "উপরের তালিকা থেকে যে পণ্যটি অর্ডার করতে চান সেটির নাম টাইপ করুন।"
+        }
+      },
+      "config": {
+        "show_catalog": true,
+        "show_prices": true,
+        "show_stock": false,
+        "auto_continue": true
+      }
+    },
+    {
+      "id": "product_selection",
+      "type": "choice_from_catalog",
+      "labels": {
+        "en": {
+          "title": "Select Product",
+          "description": "Which product would you like to order?",
+          "format_help": "Type the exact product name from the list above or type the number (e.g., '1' for first product)",
+          "error_not_found": "❌ Please select a product from the available list above",
+          "retry_message": "Please choose from the available products shown above"
+        },
+        "bn": {
+          "title": "পণ্য নির্বাচন করুন",
+          "description": "আপনি কোন পণ্যটি অর্ডার করতে চান?",
+          "format_help": "উপরের তালিকা থেকে সঠিক পণ্যের নাম টাইপ করুন বা নম্বর লিখুন (যেমন: '1' প্রথম পণ্যের জন্য)",
+          "error_not_found": "❌ অনুগ্রহ করে উপরের উপলব্ধ তালিকা থেকে একটি পণ্য নির্বাচন করুন",
+          "retry_message": "অনুগ্রহ করে উপরে দেখানো উপলব্ধ পণ্যগুলো থেকে বেছে নিন"
+        }
+      },
+      "config": {
+        "allow_product_number": true,
+        "allow_product_name": true,
+        "retry_attempts": 3
+      },
+      "validation": {
+        "required": true,
+        "custom": "validate_single_product"
+      }
+    },
+    {
+      "id": "quantity_selection",
+      "type": "form",
+      "labels": {
+        "en": {
+          "title": "Quantity Selection",
+          "description": "How many {selected_product} do you want?",
+          "success": "✅ Quantity confirmed!"
+        },
+        "bn": {
+          "title": "পরিমাণ নির্বাচন",
+          "description": "{selected_product} এর কতটি চান?",
+          "success": "✅ পরিমাণ নিশ্চিত!"
+        }
+      },
+      "fields": [
+        {
+          "name": "quantity",
+          "type": "number",
+          "required": true,
+          "labels": {
+            "en": "Quantity (e.g., 1, 2, 3)",
+            "bn": "পরিমাণ (যেমন: 1, 2, 3)"
+          },
+          "validation": {
+            "min": 1,
+            "max": 50
+          }
+        }
+      ]
+    },
+    {
+      "id": "want_more_products",
+      "type": "choice",
+      "labels": {
+        "en": {
+          "title": "Add More Products?",
+          "description": "Would you like to add more products to your order?"
+        },
+        "bn": {
+          "title": "আরো পণ্য যোগ করবেন?",
+          "description": "আপনি কি আপনার অর্ডারে আরো পণ্য যোগ করতে চান?"
+        }
+      },
+      "choices": [
+        {
+          "id": "yes_more",
+          "labels": {
+            "en": "Yes, add more products",
+            "bn": "হ্যাঁ, আরো পণ্য যোগ করুন"
+          },
+          "next_step": "show_products"
+        },
+        {
+          "id": "no_more",
+          "labels": {
+            "en": "No, continue with my order",
+            "bn": "না, আমার অর্ডার নিয়ে এগিয়ে যান"
+          }
+        }
+      ]
+    },
+    {
+      "id": "customer_info",
+      "type": "form",
+      "labels": {
+        "en": {
+          "title": "Customer Information",
+          "description": "To complete your order, we need your contact and delivery information. This helps us:\n• Contact you for order confirmation\n• Arrange delivery to your location\n• Keep you updated about your order status\n\nPlease provide the following details:",
+          "success": "✅ Your information has been saved successfully!"
+        },
+        "bn": {
+          "title": "গ্রাহকের তথ্য",
+          "description": "আপনার অর্ডার সম্পন্ন করতে আমাদের আপনার যোগাযোগ ও ডেলিভারির তথ্য প্রয়োজন। এটি আমাদের সাহায্য করে:\n• অর্ডার নিশ্চিতকরণের জন্য আপনার সাথে যোগাযোগ করতে\n• আপনার স্থানে ডেলিভারির ব্যবস্থা করতে\n• অর্ডারের অবস্থা সম্পর্কে আপডেট দিতে\n\nঅনুগ্রহ করে নিম্নলিখিত তথ্য প্রদান করুন:",
+          "success": "✅ আপনার তথ্য সফলভাবে সংরক্ষিত হয়েছে!"
+        }
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "labels": {
+            "en": "Your Full Name (as you want it on the delivery)",
+            "bn": "আপনার পূর্ণ নাম (যেমনটি ডেলিভারিতে চান)"
+          },
+          "validation": {
+            "min_length": 2,
+            "max_length": 100
+          },
+          "help_text": {
+            "en": "Enter your complete name for delivery identification",
+            "bn": "ডেলিভারি সনাক্তকরণের জন্য আপনার সম্পূর্ণ নাম লিখুন"
+          }
+        },
+        {
+          "name": "phone",
+          "type": "tel",
+          "required": true,
+          "labels": {
+            "en": "Mobile Number (11 digits, e.g., 01812345678)",
+            "bn": "মোবাইল নম্বর (১১ সংখ্যার, যেমন: ০১৮১২৩৪৫৬৭৮)"
+          },
+          "validation": {
+            "pattern": "^01[0-9]{9}$"
+          },
+          "help_text": {
+            "en": "We'll call this number for delivery coordination",
+            "bn": "ডেলিভারি সমন্বয়ের জন্য আমরা এই নম্বরে কল করব"
+          }
+        },
+        {
+          "name": "email",
+          "type": "email",
+          "required": false,
+          "labels": {
+            "en": "Email Address (Optional - for order updates)",
+            "bn": "ইমেইল ঠিকানা (ঐচ্ছিক - অর্ডার আপডেটের জন্য)"
+          },
+          "help_text": {
+            "en": "We'll send order confirmations and updates to this email",
+            "bn": "আমরা এই ইমেইলে অর্ডার নিশ্চিতকরণ এবং আপডেট পাঠাব"
+          }
+        }
+      ]
+    },
+    {
+      "id": "delivery_area",
+      "type": "choice",
+      "labels": {
+        "en": {
+          "title": "Delivery Area",
+          "description": "Where should we deliver your order? Please select your delivery location:"
+        },
+        "bn": {
+          "title": "ডেলিভারি এলাকা",
+          "description": "আমরা আপনার অর্ডার কোথায় পৌঁছে দেব? আপনার ডেলিভারি লোকেশন নির্বাচন করুন:"
+        }
+      },
+      "choices": [
+        {
+          "id": "inside_dhaka",
+          "labels": {
+            "en": "Inside Dhaka (Delivery: ৳60, 1-2 days)",
+            "bn": "ঢাকার ভিতরে (ডেলিভারি: ৳৬০, ১-২ দিন)"
+          },
+          "shipping_charge": 60,
+          "delivery_time": "1-2 days"
+        },
+        {
+          "id": "outside_dhaka",
+          "labels": {
+            "en": "Outside Dhaka (Delivery: ৳120, 3-5 days)",
+            "bn": "ঢাকার বাইরে (ডেলিভারি: ৳১২০, ৩-৫ দিন)"
+          },
+          "shipping_charge": 120,
+          "delivery_time": "3-5 days"
+        }
+      ]
+    },
+    {
+      "id": "delivery_address",
+      "type": "form",
+      "labels": {
+        "en": {
+          "title": "Delivery Address",
+          "description": "Please provide your complete delivery address. Make sure it's accurate so our delivery person can find you easily."
+        },
+        "bn": {
+          "title": "ডেলিভারি ঠিকানা",
+          "description": "অনুগ্রহ করে আপনার সম্পূর্ণ ডেলিভারি ঠিকানা দিন। নিশ্চিত করুন যে এটি সঠিক যাতে আমাদের ডেলিভারি ব্যক্তি আপনাকে সহজে খুঁজে পেতে পারে।"
+        }
+      },
+      "fields": [
+        {
+          "name": "address",
+          "type": "textarea",
+          "required": true,
+          "labels": {
+            "en": "Complete Address (House/Flat, Road, Area, Thana/District)",
+            "bn": "সম্পূর্ণ ঠিকানা (বাড়ি/ফ্ল্যাট, রাস্তা, এলাকা, থানা/জেলা)"
+          },
+          "validation": {
+            "min_length": 15,
+            "max_length": 300
+          },
+          "help_text": {
+            "en": "Include house number, road name, area, and district",
+            "bn": "বাড়ির নম্বর, রাস্তার নাম, এলাকা এবং জেলা অন্তর্ভুক্ত করুন"
+          }
+        },
+        {
+          "name": "landmark",
+          "type": "text",
+          "required": false,
+          "labels": {
+            "en": "Nearby Landmark (e.g., near mosque, market, school)",
+            "bn": "কাছাকাছি ল্যান্ডমার্ক (যেমন: মসজিদ, বাজার, স্কুলের কাছে)"
+          },
+          "help_text": {
+            "en": "This helps our delivery person locate your address easily",
+            "bn": "এটি আমাদের ডেলিভারি ব্যক্তিকে আপনার ঠিকানা সহজে খুঁজে পেতে সাহায্য করে"
+          }
+        }
+      ]
+    },
+    {
+      "id": "payment_method",
+      "type": "choice",
+      "labels": {
+        "en": {
+          "title": "Payment Method",
+          "description": "How would you like to pay for your order?"
+        },
+        "bn": {
+          "title": "পেমেন্ট পদ্ধতি",
+          "description": "আপনি কীভাবে আপনার অর্ডারের পেমেন্ট করতে চান?"
+        }
+      },
+      "choices": [
+        {
+          "id": "cash_on_delivery",
+          "labels": {
+            "en": "Cash on Delivery (Pay when you receive)",
+            "bn": "ক্যাশ অন ডেলিভারি (পণ্য পেলে টাকা দিন)"
+          },
+          "is_default": true,
+          "description": {
+            "en": "Pay in cash when the product is delivered",
+            "bn": "পণ্য ডেলিভারি হওয়ার সময় নগদে পেমেন্ট করুন"
+          }
+        },
+        {
+          "id": "bkash",
+          "labels": {
+            "en": "bKash (Mobile Payment)",
+            "bn": "বিকাশ (মোবাইল পেমেন্ট)"
+          },
+          "description": {
+            "en": "Pay through bKash mobile banking",
+            "bn": "বিকাশ মোবাইল ব্যাংকিং এর মাধ্যমে পেমেন্ট করুন"
+          }
+        },
+        {
+          "id": "nagad",
+          "labels": {
+            "en": "Nagad (Mobile Payment)",
+            "bn": "নগদ (মোবাইল পেমেন্ট)"
+          },
+          "description": {
+            "en": "Pay through Nagad mobile banking",
+            "bn": "নগদ মোবাইল ব্যাংকিং এর মাধ্যমে পেমেন্ট করুন"
+          }
+        }
+      ]
+    },
+    {
+      "id": "special_instructions",
+      "type": "form",
+      "labels": {
+        "en": {
+          "title": "Special Instructions (Optional)",
+          "description": "Do you have any special requests or delivery instructions?"
+        },
+        "bn": {
+          "title": "বিশেষ নির্দেশনা (ঐচ্ছিক)",
+          "description": "আপনার কোন বিশেষ অনুরোধ বা ডেলিভারির নির্দেশনা আছে?"
+        }
+      },
+      "fields": [
+        {
+          "name": "notes",
+          "type": "textarea",
+          "required": false,
+          "labels": {
+            "en": "Special Instructions or Notes (Optional)",
+            "bn": "বিশেষ নির্দেশনা বা নোট (ঐচ্ছিক)"
+          },
+          "validation": {
+            "max_length": 500
+          },
+          "help_text": {
+            "en": "Any special requests, preferred delivery time, or other notes",
+            "bn": "কোন বিশেষ অনুরোধ, পছন্দের ডেলিভারি সময়, বা অন্য কোন নোট"
+          }
+        }
+      ]
+    },
+    {
+      "id": "order_confirmation",
+      "type": "confirmation",
+      "labels": {
+        "en": {
+          "title": "Confirm Your Order",
+          "description": "Please review your order details below and confirm:\n\n📦 **Your Products:**\n{product_summary}\n\n👤 **Customer Details:**\n{customer_info}\n\n🚚 **Delivery Information:**\n{delivery_info}\n\n💰 **Payment Summary:**\n{payment_summary}\n\nIs everything correct?",
+          "confirm_button": "✅ Yes, Place My Order",
+          "cancel_button": "❌ No, Let Me Edit"
+        },
+        "bn": {
+          "title": "আপনার অর্ডার নিশ্চিত করুন",
+          "description": "নিচে আপনার অর্ডারের বিবরণ দেখুন এবং নিশ্চিত করুন:\n\n📦 **আপনার পণ্যসমূহ:**\n{product_summary}\n\n👤 **গ্রাহকের বিবরণ:**\n{customer_info}\n\n🚚 **ডেলিভারি তথ্য:**\n{delivery_info}\n\n💰 **পেমেন্ট সংক্ষেপ:**\n{payment_summary}\n\nসবকিছু ঠিক আছে?",
+          "confirm_button": "✅ হ্যাঁ, আমার অর্ডার দিন",
+          "cancel_button": "❌ না, আমাকে এডিট করতে দিন"
+        }
+      },
+      "config": {
+        "show_summary": true,
+        "show_total": true,
+        "show_customer_info": true,
+        "show_delivery_info": true,
+        "allow_edit": false
+      }
+    }
+  ]
+}

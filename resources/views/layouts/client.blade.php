@@ -466,6 +466,21 @@
             </a>
         </li>
 
+        <li class="{{ request()->routeIs('client.workflows*') ? 'mm-active' : '' }}">
+            <a href="{{ route('client.workflows.index') }}" aria-expanded="false">
+                <div class="icon_menu">
+                    <i class="fas fa-project-diagram" style="font-size: 18px; color: #4facfe;"></i>
+                </div>
+                <span>Workflows</span>
+                @php
+                    $activeWorkflows = auth('client')->user()->workflows()->where('is_active', true)->count();
+                @endphp
+                @if($activeWorkflows > 0)
+                    <span class="badge badge-success">{{ $activeWorkflows }}</span>
+                @endif
+            </a>
+        </li>
+
         <li class="{{ request()->routeIs('client.orders') ? 'mm-active' : '' }}">
             <a href="{{ route('client.orders') }}" aria-expanded="false">
                 <div class="icon_menu">

@@ -164,6 +164,25 @@ Route::prefix('client')->name('client.')->middleware(['web', App\Http\Middleware
         Route::get('/products/modal/{pageId}', [\App\Http\Controllers\Client\ProductController::class, 'getModalProducts'])->name('products.modal');
         Route::post('/messages/{customer}/send-products', [\App\Http\Controllers\Client\MessagesController::class, 'sendProductCarousel'])->name('messages.send-products');
         
+        // Workflow Management routes
+        Route::prefix('workflows')->name('workflows.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Client\WorkflowController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Client\WorkflowController::class, 'create'])->name('create');
+            Route::post('/create-from-template', [\App\Http\Controllers\Client\WorkflowController::class, 'createFromTemplate'])->name('create-from-template');
+            Route::post('/', [\App\Http\Controllers\Client\WorkflowController::class, 'store'])->name('store');
+            Route::get('/{workflow}', [\App\Http\Controllers\Client\WorkflowController::class, 'show'])->name('show');
+            Route::get('/{workflow}/edit', [\App\Http\Controllers\Client\WorkflowController::class, 'edit'])->name('edit');
+            Route::put('/{workflow}', [\App\Http\Controllers\Client\WorkflowController::class, 'update'])->name('update');
+            Route::delete('/{workflow}', [\App\Http\Controllers\Client\WorkflowController::class, 'destroy'])->name('destroy');
+            
+            // Workflow actions
+            Route::patch('/{workflow}/publish', [\App\Http\Controllers\Client\WorkflowController::class, 'publish'])->name('publish');
+            Route::patch('/{workflow}/unpublish', [\App\Http\Controllers\Client\WorkflowController::class, 'unpublish'])->name('unpublish');
+            
+            // Analytics
+            Route::get('/{workflow}/analytics', [\App\Http\Controllers\Client\WorkflowController::class, 'analytics'])->name('analytics');
+        });
+        
         Route::get('/orders', function() { 
             $orders = auth('client')->user()->orders()->latest()->get() ?? collect();
             return view('client.orders', compact('orders')); 

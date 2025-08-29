@@ -189,11 +189,11 @@ class FacebookGraphAPIService
                 // Add action buttons
                 $buttons = [];
                 
-                // Buy Now button
+                // View Details button
                 $buttons[] = [
                     'type' => 'postback',
-                    'title' => 'Order Now',
-                    'payload' => 'ORDER_' . $product['id']
+                    'title' => 'View Details',
+                    'payload' => 'VIEW_PRODUCT_' . $product['id']
                 ];
                 
                 // More Info button (opens external link)
@@ -324,6 +324,113 @@ class FacebookGraphAPIService
             }
 
         } catch (\Exception $e) {
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Send generic template message (for buttons, cards, etc.)
+     */
+    public function sendGenericTemplate(string $pageToken, string $userId, array $elements): array
+    {
+        try {
+            $messageData = [
+                'recipient' => ['id' => $userId],
+                'message' => [
+                    'attachment' => [
+                        'type' => 'template',
+                        'payload' => [
+                            'template_type' => 'generic',
+                            'elements' => $elements
+                        ]
+                    ]
+                ]
+            ];
+
+            $response = Http::post($this->baseUrl . '/me/messages', [
+                'access_token' => $pageToken,
+            ] + $messageData);
+
+            if ($response->successful()) {
+                $responseData = $response->json();
+                return [
+                    'success' => true,
+                    'message_id' => $responseData['message_id'] ?? null
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'error' => $response->json('error.message', 'Unknown error')
+                ];
+            }
+
+        } catch (\Exception $e) {
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Send detailed product information as a formatted message
+     */
+    public function sendProductDetails(string $pageToken, string $userId, array $product): array
+    {
+        try {
+            $effectivePrice = $product['sale_price'] ?? $product['price'];
+            $originalPrice = $product['price'];
+            
+            $message = "📦 **{$product['name']}**\n\n";
+            
+            if (!empty($product['description'])) {
+                $message .= "📝 **Description:**\n{$product['description']}\n\n";
+            }
+            
+            // Price information
+            $message .= "💰 **Price:** ৳" . number_format($effectivePrice, 0);
+            if ($product['sale_price'] && $product['sale_price'] < $originalPrice) {
+                $message .= " (Sale Price)\n";
+                $message .= "~~Original: ৳" . number_format($originalPrice, 0) . "~~\n";
+                $savings = $originalPrice - $product['sale_price'];
+                $message .= "💵 **You Save:** ৳" . number_format($savings, 0) . "\n\n";
+            } else {
+                $message .= "\n\n";
+            }
+            
+            // Stock information
+            if (isset($product['stock_quantity'])) {
+                if ($product['track_stock'] && $product['stock_quantity'] > 0) {
+                    if ($product['stock_quantity'] <= 5) {
+                        $message .= "⚠️ **Stock:** Only {$product['stock_quantity']} left!\n\n";
+                    } else {
+                        $message .= "✅ **Stock:** Available ({$product['stock_quantity']} units)\n\n";
+                    }
+                } elseif ($product['track_stock'] && $product['stock_quantity'] <= 0) {
+                    $message .= "❌ **Out of Stock**\n\n";
+                } else {
+                    $message .= "✅ **Stock:** Available\n\n";
+                }
+            }
+            
+            // Category
+            if (!empty($product['category'])) {
+                $message .= "🏷️ **Category:** {$product['category']}\n";
+            }
+            
+            // SKU
+            if (!empty($product['sku'])) {
+                $message .= "🔖 **SKU:** {$product['sku']}\n";
+            }
+            
+            $message .= "\n📞 **Interested?** Reply with your contact details (name, phone, address) to place an order!";
+            
+            return $this->sendTextMessage($pageToken, $userId, $message);
+
+        } catch (\Exception $e) {
+            Log::error('Exception sending product details', [
+                'user_id' => $userId,
+                'product_id' => $product['id'] ?? 'unknown',
+                'message' => $e->getMessage()
+            ]);
+            
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }

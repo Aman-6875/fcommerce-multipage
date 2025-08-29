@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\FacebookPage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -51,15 +52,10 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
             'price' => 'required|numeric|min:0',
-            'sale_price' => 'nullable|numeric|min:0|lt:price',
-            'stock_quantity' => 'required|integer|min:0',
-            'category' => 'required|string|max:100',
-            'image_url' => 'nullable|url',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'product_link' => 'nullable|url',
             'facebook_page_id' => 'required|exists:facebook_pages,id',
-            'sku' => 'nullable|string|max:50|unique:products,sku',
             'weight' => 'nullable|numeric|min:0',
-            'track_stock' => 'boolean',
             'is_active' => 'boolean'
         ]);
 
@@ -69,21 +65,30 @@ class ProductController extends Controller
             return back()->withErrors(['facebook_page_id' => 'Invalid Facebook page selected.']);
         }
 
+        // Handle image upload
+        $imageUrl = null;
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageName = time() . '_' . $image->getClientOriginalName();
+            $imagePath = $image->storeAs('products', $imageName, 'public');
+            $imageUrl = asset('storage/' . $imagePath);
+        }
+
         $product = Product::create([
             'client_id' => $client->id,
             'facebook_page_id' => $request->facebook_page_id,
             'name' => $request->name,
             'description' => $request->description,
-            'sku' => $request->sku ?: null,
+            'sku' => null,
             'price' => $request->price,
-            'sale_price' => $request->sale_price ?: null,
-            'stock_quantity' => $request->stock_quantity,
-            'image_url' => $request->image_url ?: null,
+            'sale_price' => null,
+            'stock_quantity' => 0,
+            'image_url' => $imageUrl,
             'product_link' => $request->product_link ?: null,
-            'category' => $request->category,
-            'tags' => $request->tags ? explode(',', $request->tags) : null,
-            'specifications' => $request->specifications ? json_decode($request->specifications, true) : null,
-            'track_stock' => $request->boolean('track_stock', true),
+            'category' => 'General',
+            'tags' => null,
+            'specifications' => null,
+            'track_stock' => false,
             'is_active' => $request->boolean('is_active', true),
             'weight' => $request->weight ?: null,
             'sort_order' => 0
@@ -138,15 +143,10 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
             'price' => 'required|numeric|min:0',
-            'sale_price' => 'nullable|numeric|min:0|lt:price',
-            'stock_quantity' => 'required|integer|min:0',
-            'category' => 'required|string|max:100',
-            'image_url' => 'nullable|url',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'product_link' => 'nullable|url',
             'facebook_page_id' => 'required|exists:facebook_pages,id',
-            'sku' => 'nullable|string|max:50|unique:products,sku,' . $product->id,
             'weight' => 'nullable|numeric|min:0',
-            'track_stock' => 'boolean',
             'is_active' => 'boolean'
         ]);
 
@@ -156,20 +156,30 @@ class ProductController extends Controller
             return back()->withErrors(['facebook_page_id' => 'Invalid Facebook page selected.']);
         }
 
+        // Handle image upload
+        $imageUrl = $product->image_url; // Keep existing image if no new one uploaded
+        if ($request->hasFile('image')) {
+            // Delete old image if it exists
+            if ($product->image_url) {
+                $oldImagePath = str_replace(asset('storage/'), '', $product->image_url);
+                if (Storage::disk('public')->exists($oldImagePath)) {
+                    Storage::disk('public')->delete($oldImagePath);
+                }
+            }
+            
+            $image = $request->file('image');
+            $imageName = time() . '_' . $image->getClientOriginalName();
+            $imagePath = $image->storeAs('products', $imageName, 'public');
+            $imageUrl = asset('storage/' . $imagePath);
+        }
+
         $product->update([
             'facebook_page_id' => $request->facebook_page_id,
             'name' => $request->name,
             'description' => $request->description,
-            'sku' => $request->sku ?: null,
             'price' => $request->price,
-            'sale_price' => $request->sale_price ?: null,
-            'stock_quantity' => $request->stock_quantity,
-            'image_url' => $request->image_url ?: null,
+            'image_url' => $imageUrl,
             'product_link' => $request->product_link ?: null,
-            'category' => $request->category,
-            'tags' => $request->tags ? explode(',', $request->tags) : null,
-            'specifications' => $request->specifications ? json_decode($request->specifications, true) : null,
-            'track_stock' => $request->boolean('track_stock', true),
             'is_active' => $request->boolean('is_active', true),
             'weight' => $request->weight ?: null
         ]);
@@ -186,6 +196,14 @@ class ProductController extends Controller
         // Ensure product belongs to the authenticated client
         if ($product->client_id !== auth('client')->id()) {
             abort(404);
+        }
+
+        // Delete associated image if it exists
+        if ($product->image_url) {
+            $imagePath = str_replace(asset('storage/'), '', $product->image_url);
+            if (Storage::disk('public')->exists($imagePath)) {
+                Storage::disk('public')->delete($imagePath);
+            }
         }
 
         $product->delete();

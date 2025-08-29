@@ -126,12 +126,123 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <!-- Sample data - will be populated by AJAX -->
-                                    <tr>
-                                        <td colspan="8" class="text-center text-muted py-4">
-                                            <i class="fas fa-spinner fa-spin"></i> {{ __('common.loading') }}...
-                                        </td>
-                                    </tr>
+                                    @forelse($orders as $order)
+                                        <tr>
+                                            <td>
+                                                <span class="fw-bold">{{ $order->order_number }}</span>
+                                                <br><small class="text-muted">ID: {{ $order->id }}</small>
+                                            </td>
+                                            <td>
+                                                @if($order->customer_info)
+                                                    @php
+                                                        $customerInfo = is_array($order->customer_info) ? $order->customer_info : json_decode($order->customer_info, true);
+                                                    @endphp
+                                                    <strong>{{ $customerInfo['name'] ?? 'N/A' }}</strong><br>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-phone"></i> {{ $customerInfo['phone'] ?? 'N/A' }}<br>
+                                                        @if(isset($customerInfo['email']) && $customerInfo['email'])
+                                                            <i class="fas fa-envelope"></i> {{ $customerInfo['email'] }}
+                                                        @endif
+                                                    </small>
+                                                @else
+                                                    <span class="text-muted">{{ __('common.no_data') }}</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($order->notes)
+                                                    @php
+                                                        $notes = is_array($order->notes) ? $order->notes : json_decode($order->notes, true);
+                                                        $productSelections = $notes['product_selections'] ?? null;
+                                                    @endphp
+                                                    
+                                                    @if($productSelections && is_array($productSelections))
+                                                        @foreach($productSelections as $product)
+                                                            <div class="mb-1">
+                                                                <strong>{{ $product['name'] ?? 'N/A' }}</strong><br>
+                                                                <small class="text-muted">
+                                                                    {{ __('common.quantity') }}: {{ $product['quantity'] ?? 0 }} × 
+                                                                    ৳{{ number_format($product['price'] ?? 0) }} = 
+                                                                    ৳{{ number_format(($product['quantity'] ?? 0) * ($product['price'] ?? 0)) }}
+                                                                </small>
+                                                            </div>
+                                                            @if(!$loop->last)<hr class="my-1">@endif
+                                                        @endforeach
+                                                    @else
+                                                        <span class="text-muted">{{ __('common.no_data') }}</span>
+                                                    @endif
+                                                @else
+                                                    <span class="text-muted">{{ __('common.no_data') }}</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <strong>৳{{ number_format($order->total_amount ?? 0) }}</strong>
+                                            </td>
+                                            <td>
+                                                @switch($order->payment_method)
+                                                    @case('cod')
+                                                        <span class="badge bg-warning">{{ __('client.cod') }}</span>
+                                                        @break
+                                                    @case('online')
+                                                        <span class="badge bg-info">{{ __('client.online_payment') }}</span>
+                                                        @break
+                                                    @case('bank_transfer')
+                                                        <span class="badge bg-secondary">{{ __('client.bank_transfer') }}</span>
+                                                        @break
+                                                    @default
+                                                        <span class="badge bg-light text-dark">{{ $order->payment_method ?? 'N/A' }}</span>
+                                                @endswitch
+                                            </td>
+                                            <td>
+                                                @switch($order->status)
+                                                    @case('pending')
+                                                        <span class="badge bg-warning">{{ __('common.pending') }}</span>
+                                                        @break
+                                                    @case('confirmed')
+                                                        <span class="badge bg-info">{{ __('common.confirmed') }}</span>
+                                                        @break
+                                                    @case('processing')
+                                                        <span class="badge bg-primary">{{ __('common.processing') }}</span>
+                                                        @break
+                                                    @case('shipped')
+                                                        <span class="badge bg-secondary">{{ __('common.shipped') }}</span>
+                                                        @break
+                                                    @case('delivered')
+                                                        <span class="badge bg-success">{{ __('common.delivered') }}</span>
+                                                        @break
+                                                    @case('cancelled')
+                                                        <span class="badge bg-danger">{{ __('common.cancelled') }}</span>
+                                                        @break
+                                                    @default
+                                                        <span class="badge bg-light text-dark">{{ $order->status ?? 'N/A' }}</span>
+                                                @endswitch
+                                            </td>
+                                            <td>
+                                                <small>{{ $order->created_at ? $order->created_at->format('d M, Y') : 'N/A' }}</small><br>
+                                                <small class="text-muted">{{ $order->created_at ? $order->created_at->format('h:i A') : '' }}</small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <button class="btn btn-sm btn-outline-primary" onclick="viewOrder({{ $order->id }})" title="{{ __('common.view') }}">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    @if($order->status === 'pending')
+                                                        <button class="btn btn-sm btn-outline-success" onclick="confirmOrder({{ $order->id }})" title="{{ __('common.confirm') }}">
+                                                            <i class="fas fa-check"></i>
+                                                        </button>
+                                                    @endif
+                                                    <button class="btn btn-sm btn-outline-secondary" onclick="editOrder({{ $order->id }})" title="{{ __('common.edit') }}">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="8" class="text-center text-muted py-4">
+                                                <i class="fas fa-inbox"></i> {{ __('client.no_orders_found') }}
+                                            </td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
@@ -139,7 +250,7 @@
                         <!-- No Orders -->
                         <div class="text-center py-5">
                             <div class="mb-4">
-                                <i class="fas fa-shopping-cart text-muted" style="font-size: 4rem;"></i>
+                                <i class="fas fa-receipt text-muted" style="font-size: 4rem;"></i>
                             </div>
                             <h5 class="text-muted">{{ __('client.no_orders_yet') }}</h5>
                             <p class="text-muted mb-4">{{ __('client.orders_will_appear_here') }}</p>
@@ -269,9 +380,6 @@ $(document).ready(function() {
     $('#quantity, #unit_price, #discount').on('input', function() {
         calculateTotal();
     });
-    
-    // Load orders data
-    loadOrders();
 });
 
 function calculateTotal() {
@@ -285,14 +393,24 @@ function calculateTotal() {
     $('#totalAmount').text('৳' + total.toFixed(2));
 }
 
-function loadOrders() {
-    // This will be implemented when we have the orders API endpoint
-    console.log('Loading orders...');
-}
 
 function createOrder() {
     // This will be implemented when we have the create order endpoint
     console.log('Creating order...');
+}
+
+function viewOrder(orderId) {
+    alert('View order ' + orderId + ' - Feature to be implemented');
+}
+
+function confirmOrder(orderId) {
+    if(confirm('Are you sure you want to confirm this order?')) {
+        alert('Confirm order ' + orderId + ' - Feature to be implemented');
+    }
+}
+
+function editOrder(orderId) {
+    alert('Edit order ' + orderId + ' - Feature to be implemented');
 }
 
 function resetFilters() {
@@ -300,7 +418,7 @@ function resetFilters() {
     $('#statusFilter').val('');
     $('#paymentFilter').val('');
     $('#dateFilter').val('');
-    loadOrders();
+    window.location.reload();
 }
 
 function exportOrders() {

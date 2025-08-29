@@ -61,6 +61,7 @@ return [
     'free_limits_reached_message' => 'You\'ve reached your free plan limits. Upgrade to premium to continue:',
     'no_customers_yet' => 'No customers yet',
     'no_orders_yet' => 'No orders yet',
+    'no_orders_found' => 'No orders found',
     'view_all' => 'View All',
     'sendpulse_integration' => 'SendPulse Integration',
     'api_user_id' => 'API User ID',

@@ -35,6 +35,21 @@ class FacebookPage extends Model
         return $this->belongsTo(Client::class);
     }
 
+    public function workflows()
+    {
+        return $this->hasMany(Workflow::class);
+    }
+
+    public function activeWorkflow()
+    {
+        return $this->hasOne(Workflow::class)->where('is_active', true)->latest('published_at');
+    }
+
+    public function conversationStates()
+    {
+        return $this->hasMany(ConversationState::class);
+    }
+
     // Helper methods
     public function isConnected(): bool
     {

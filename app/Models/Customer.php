@@ -64,6 +64,23 @@ class Customer extends Model
         return $this->hasMany(Order::class);
     }
 
+    public function conversationStates()
+    {
+        return $this->hasMany(ConversationState::class);
+    }
+
+    public function activeConversation()
+    {
+        return $this->hasOne(ConversationState::class)->where('status', 'active')->latest('last_activity_at');
+    }
+
+    // Helper method to get customer's language preference
+    public function getLanguage(): string
+    {
+        $activeConversation = $this->activeConversation;
+        return $activeConversation ? $activeConversation->language : 'en';
+    }
+
     public function services()
     {
         return $this->hasMany(Service::class);
