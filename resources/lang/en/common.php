@@ -95,4 +95,6 @@ return [
     'please_fill_required_fields' => 'Please fill all required fields',
     'validation_errors' => 'Validation Errors',
     'error_occurred' => 'An error occurred',
+    'qty' => 'Qty',
+    'confirmed_at' => 'Confirmed At',
 ];

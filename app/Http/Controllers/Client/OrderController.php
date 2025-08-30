@@ -116,14 +116,14 @@ class OrderController extends Controller
             if ($request->ajax()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Order created successfully!',
+                    'message' => __('client.order_created_successfully'),
                     'order_id' => $order->id,
                     'redirect_url' => route('client.orders.show', $order)
                 ]);
             }
             
             return redirect()->route('client.orders.show', $order)
-                ->with('success', 'Order created successfully!');
+                ->with('success', __('client.order_created_successfully'));
                 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -132,12 +132,12 @@ class OrderController extends Controller
             if ($request->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to create order: ' . $e->getMessage(),
+                    'message' => __('client.failed_to_create_order') . ': ' . $e->getMessage(),
                     'errors' => ['error' => $e->getMessage()]
                 ], 500);
             }
             
-            return back()->withInput()->withErrors(['error' => 'Failed to create order: ' . $e->getMessage()]);
+            return back()->withInput()->withErrors(['error' => __('client.failed_to_create_order') . ': ' . $e->getMessage()]);
         }
     }
 
@@ -147,7 +147,7 @@ class OrderController extends Controller
         
         if (in_array($order->status, ['shipped', 'delivered', 'cancelled'])) {
             return redirect()->route('client.orders.show', $order)
-                ->withErrors(['error' => 'Cannot edit order with status: ' . $order->status]);
+                ->withErrors(['error' => __('client.cannot_edit_order_status', ['status' => __('common.' . $order->status)])]);
         }
         
         $client = Auth::guard('client')->user();
@@ -165,7 +165,7 @@ class OrderController extends Controller
         
         if (in_array($order->status, ['shipped', 'delivered', 'cancelled'])) {
             return redirect()->route('client.orders.show', $order)
-                ->withErrors(['error' => 'Cannot update order with status: ' . $order->status]);
+                ->withErrors(['error' => __('client.cannot_edit_order_status', ['status' => __('common.' . $order->status)])]);
         }
 
         $validated = $request->validate([
@@ -196,11 +196,11 @@ class OrderController extends Controller
             DB::commit();
             
             return redirect()->route('client.orders.show', $order)
-                ->with('success', 'Order updated successfully!');
+                ->with('success', __('client.order_updated_successfully'));
                 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withInput()->withErrors(['error' => 'Failed to update order: ' . $e->getMessage()]);
+            return back()->withInput()->withErrors(['error' => __('client.failed_to_update_order') . ': ' . $e->getMessage()]);
         }
     }
 
@@ -236,11 +236,11 @@ class OrderController extends Controller
             // Send notification to customer about status change
             $this->notificationService->sendOrderStatusUpdate($order, $oldStatus, $validated['status']);
             
-            return redirect()->back()->with('success', 'Order status updated successfully!');
+            return redirect()->back()->with('success', __('client.order_status_updated_successfully'));
             
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'Failed to update status: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => __('client.failed_to_update_status') . ': ' . $e->getMessage()]);
         }
     }
 
@@ -250,7 +250,7 @@ class OrderController extends Controller
         
         if (!in_array($order->status, ['pending', 'cancelled'])) {
             return redirect()->route('client.orders.index')
-                ->withErrors(['error' => 'Cannot delete order with status: ' . $order->status]);
+                ->withErrors(['error' => __('client.cannot_delete_order_status', ['status' => __('common.' . $order->status)])]);
         }
 
         try {
@@ -262,11 +262,11 @@ class OrderController extends Controller
             DB::commit();
             
             return redirect()->route('client.orders.index')
-                ->with('success', 'Order deleted successfully!');
+                ->with('success', __('client.order_deleted_successfully'));
                 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'Failed to delete order: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => __('client.failed_to_delete_order') . ': ' . $e->getMessage()]);
         }
     }
 
@@ -305,7 +305,7 @@ class OrderController extends Controller
     {
         // Default settings - in real implementation, these would come from client settings table
         return [
-            'title' => 'INVOICE',
+            'title' => __('client.invoice'),
             'language' => 'en',
             'currency_symbol' => '৳',
             'primary_color' => '#007bff',
@@ -320,9 +320,9 @@ class OrderController extends Controller
             'business_phone' => $client->phone ?? '',
             'business_email' => $client->email ?? '',
             'business_address' => $client->address ?? '',
-            'payment_instructions' => 'Please keep this invoice for your records.',
-            'default_notes' => 'Thank you for choosing our service. Your satisfaction is our priority.',
-            'footer_text' => 'Generated from Facebook Messenger Commerce System',
+            'payment_instructions' => __('client.invoice_payment_instructions'),
+            'default_notes' => __('client.invoice_default_notes'),
+            'footer_text' => __('client.invoice_footer_text'),
         ];
     }
     
@@ -354,9 +354,9 @@ class OrderController extends Controller
             $sent = $this->notificationService->sendInvoiceToCustomer($order, $message, $invoiceUrl);
             
             if ($sent) {
-                return response()->json(['success' => true, 'message' => 'Invoice sent successfully!']);
+                return response()->json(['success' => true, 'message' => __('client.invoice_sent_successfully')]);
             } else {
-                return response()->json(['success' => false, 'message' => 'Failed to send invoice. Customer may need to message first.'], 422);
+                return response()->json(['success' => false, 'message' => __('client.failed_to_send_invoice')], 422);
             }
             
         } catch (\Exception $e) {
@@ -366,18 +366,17 @@ class OrderController extends Controller
     
     private function buildInvoiceMessage(Order $order, string $invoiceUrl): string
     {
-        $customerName = $order->customer_info['name'] ?? 'Valued Customer';
+        $customerName = $order->customer_info['name'] ?? __('client.valued_customer');
         $orderNumber = $order->order_number;
         $total = '৳' . number_format($order->total_amount, 2);
         
-        return "📋 **Invoice for Order #{$orderNumber}**\n\n" .
-               "Hi {$customerName}! 👋\n\n" .
-               "Your invoice is ready:\n" .
-               "• Order: #{$orderNumber}\n" .
-               "• Total: {$total}\n" .
-               "• Status: " . ucfirst($order->status) . "\n\n" .
-               "📄 View Invoice: {$invoiceUrl}\n\n" .
-               "Thank you for your business! 🙏";
+        return __('client.invoice_message_template', [
+            'order_number' => $orderNumber,
+            'customer_name' => $customerName,
+            'total' => $total,
+            'status' => __('common.' . $order->status),
+            'invoice_url' => $invoiceUrl
+        ]);
     }
 
     public function exportOrders(Request $request)
@@ -519,7 +518,7 @@ class OrderController extends Controller
         
         return response()->json([
             'success' => true,
-            'message' => "Updated {$updatedCount} customer records with information from their orders.",
+            'message' => __('client.customer_records_updated_from_orders', ['count' => $updatedCount]),
             'updated_count' => $updatedCount
         ]);
     }
@@ -564,7 +563,7 @@ class OrderController extends Controller
         
         return response()->json([
             'success' => true,
-            'message' => "Updated {$updatedCount} customer records with Facebook profile information.",
+            'message' => __('client.customer_records_updated_from_facebook', ['count' => $updatedCount]),
             'updated_count' => $updatedCount
         ]);
     }
@@ -584,7 +583,7 @@ class OrderController extends Controller
         
         return response()->json([
             'success' => true,
-            'message' => "Complete customer data update completed. Updated {$totalUpdated} customers total.",
+            'message' => __('client.complete_customer_data_update', ['total' => $totalUpdated]),
             'orders_updated' => $ordersData['updated_count'],
             'facebook_updated' => $facebookData['updated_count'],
             'total_updated' => $totalUpdated

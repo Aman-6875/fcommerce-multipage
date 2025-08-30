@@ -259,4 +259,45 @@ return [
     'edit_order' => 'Edit Order',
     'update_order' => 'Update Order',
     'please_add_at_least_one_product' => 'Please add at least one product',
+    
+    // Order Management Messages
+    'order_created_successfully' => 'Order created successfully!',
+    'failed_to_create_order' => 'Failed to create order',
+    'order_updated_successfully' => 'Order updated successfully!',
+    'failed_to_update_order' => 'Failed to update order',
+    'order_status_updated_successfully' => 'Order status updated successfully!',
+    'failed_to_update_status' => 'Failed to update status',
+    'order_deleted_successfully' => 'Order deleted successfully!',
+    'failed_to_delete_order' => 'Failed to delete order',
+    'cannot_edit_order_status' => 'Cannot edit order with status: :status',
+    'cannot_delete_order_status' => 'Cannot delete order with status: :status',
+    
+    // Invoice Related
+    'invoice' => 'INVOICE',
+    'invoice_payment_instructions' => 'Please keep this invoice for your records.',
+    'invoice_default_notes' => 'Thank you for choosing our service. Your satisfaction is our priority.',
+    'invoice_footer_text' => 'Generated from Facebook Messenger Commerce System',
+    'invoice_sent_successfully' => 'Invoice sent successfully!',
+    'failed_to_send_invoice' => 'Failed to send invoice. Customer may need to message first.',
+    'valued_customer' => 'Valued Customer',
+    'invoice_message_template' => "📋 **Invoice for Order #:order_number**\n\nHi :customer_name! 👋\n\nYour invoice is ready:\n• Order: #:order_number\n• Total: :total\n• Status: :status\n\n📄 View Invoice: :invoice_url\n\nThank you for your business! 🙏",
+    
+    // Customer Updates
+    'customer_records_updated_from_orders' => 'Updated :count customer records with information from their orders.',
+    'customer_records_updated_from_facebook' => 'Updated :count customer records with Facebook profile information.',
+    'complete_customer_data_update' => 'Complete customer data update completed. Updated :total customers total.',
+    
+    // Invoice Terms
+    'bill_to' => 'BILL TO',
+    'client_order_details' => 'CLIENT ORDER DETAILS',
+    'order_details' => 'ORDER DETAILS',
+    'invoice_number' => 'Invoice Number',
+    'item' => 'ITEM',
+    'price' => 'PRICE', 
+    'sku' => 'SKU',
+    'subtotal' => 'Subtotal',
+    'shipping_charge' => 'Shipping Charge',
+    'thank_you_for_business' => 'Thank you for your business!',
+    'track_order' => 'Track Order',
+    'generated_on' => 'Generated on',
 ];

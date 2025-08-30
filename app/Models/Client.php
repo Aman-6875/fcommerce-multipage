@@ -106,6 +106,17 @@ class Client extends Authenticatable
         return $this->subscription_expires_at && $this->subscription_expires_at->isFuture();
     }
 
+    public function getTrialDaysRemaining(): int
+    {
+        $trialDays = 10;
+        return max(0, $trialDays - $this->created_at->diffInDays(now()));
+    }
+
+    public function isTrialExpired(): bool
+    {
+        return $this->getTrialDaysRemaining() <= 0;
+    }
+
     public function hasReachedFreeLimits(): bool
     {
         if ($this->isPremium()) {
@@ -113,8 +124,7 @@ class Client extends Authenticatable
         }
 
         // Check if free trial period is over (7-10 days)
-        $trialDays = 10;
-        if ($this->created_at->diffInDays(now()) > $trialDays) {
+        if ($this->isTrialExpired()) {
             return true;
         }
 
@@ -163,6 +173,12 @@ class Client extends Authenticatable
 
     public function canAddNewPage(): bool
     {
+        // For free/trial users, check if they're within trial period and haven't reached page limit
+        if ($this->isFree()) {
+            return !$this->hasReachedPageLimit() && !$this->isTrialExpired();
+        }
+        
+        // For paid users, check subscription status and page limit
         return !$this->hasReachedPageLimit() && $this->isSubscriptionActive();
     }
 

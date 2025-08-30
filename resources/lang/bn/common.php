@@ -95,4 +95,6 @@ return [
     'please_fill_required_fields' => 'অনুগ্রহ করে সব প্রয়োজনীয় ক্ষেত্র পূরণ করুন',
     'validation_errors' => 'যাচাইকরণ ত্রুটি',
     'error_occurred' => 'একটি ত্রুটি ঘটেছে',
+    'qty' => 'পরিমাণ',
+    'confirmed_at' => 'নিশ্চিত হয়েছে',
 ];
