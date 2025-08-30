@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\CustomerMessage;
 use App\Models\FacebookPage;
+use App\Models\PageCustomer;
 use App\Services\FacebookGraphAPIService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -95,17 +96,49 @@ class FacebookWebhookController extends Controller
 
     protected function findOrCreateCustomer(FacebookPage $facebookPage, string $facebookUserId): Customer
     {
-        return Customer::firstOrCreate(
-            [
-                'client_id' => $facebookPage->client_id,
-                'facebook_user_id' => $facebookUserId
-            ],
-            [
-                'name' => 'Facebook User', // Default name, can be updated later
-                'profile_data' => ['source_page_id' => $facebookPage->page_id],
-                'status' => 'active'
-            ]
-        );
+        // First, try to find existing page customer relationship by facebook_user_id
+        $pageCustomer = \App\Models\PageCustomer::where('facebook_page_id', $facebookPage->id)
+            ->where('facebook_user_id', $facebookUserId)
+            ->with('customer')
+            ->first();
+
+        if ($pageCustomer) {
+            // Update interaction stats
+            $pageCustomer->recordInteraction();
+            return $pageCustomer->customer;
+        }
+
+        // Check if we have any customer with this facebook_user_id (across all pages)
+        // This handles the case where the same Facebook user interacts with multiple pages
+        $existingCustomer = Customer::where('client_id', $facebookPage->client_id)
+            ->where('facebook_user_id', $facebookUserId)
+            ->first();
+
+        if ($existingCustomer) {
+            // Create page customer relationship for this page
+            $pageCustomer = \App\Models\PageCustomer::findOrCreateForPage($facebookPage, $existingCustomer, $facebookUserId);
+            $pageCustomer->recordInteraction();
+            return $existingCustomer;
+        }
+
+        // No existing customer found - create new one
+        // Note: This customer will be merged later when they provide phone number through workflow
+        $customer = Customer::create([
+            'client_id' => $facebookPage->client_id,
+            'name' => 'Facebook User', // Will be updated from Facebook profile
+            'facebook_user_id' => $facebookUserId,
+            'phone' => null, // Will be collected during workflow
+            'status' => 'active'
+        ]);
+
+        // Create page customer relationship
+        $pageCustomer = \App\Models\PageCustomer::findOrCreateForPage($facebookPage, $customer, $facebookUserId);
+
+        // Try to get Facebook profile information
+        $facebookService = app(\App\Services\FacebookGraphAPIService::class);
+        $facebookService->updateCustomerWithFacebookProfile($customer, $facebookPage);
+
+        return $customer;
     }
 
     protected function handleIncomingMessage(Customer $customer, array $message, array $event): void
@@ -121,9 +154,13 @@ class FacebookWebhookController extends Controller
             return;
         }
 
+        // Get page customer ID for this customer and current page context
+        $pageCustomerId = $this->getPageCustomerId($customer, $event);
+
         // Store the message first
         CustomerMessage::create([
             'customer_id' => $customer->id,
+            'page_customer_id' => $pageCustomerId,
             'client_id' => $customer->client_id,
             'message_type' => 'incoming',
             'message_content' => $message['text'] ?? '[Attachment]',
@@ -308,8 +345,16 @@ class FacebookWebhookController extends Controller
 
         // Log the sent message
         if ($result['success']) {
+            // Get page customer ID for this customer
+            $pageCustomer = \App\Models\PageCustomer::where('customer_id', $customer->id)
+                ->whereHas('facebookPage', function($q) {
+                    $q->where('is_connected', true);
+                })
+                ->first();
+
             \App\Models\CustomerMessage::create([
                 'customer_id' => $customer->id,
+                'page_customer_id' => $pageCustomer ? $pageCustomer->id : null,
                 'client_id' => $customer->client_id,
                 'message_type' => 'outgoing',
                 'message_content' => $message,
@@ -363,9 +408,17 @@ class FacebookWebhookController extends Controller
     {
         $payload = $postback['payload'] ?? '';
         
+        // Get page customer ID for this customer
+        $pageCustomer = \App\Models\PageCustomer::where('customer_id', $customer->id)
+            ->whereHas('facebookPage', function($q) {
+                $q->where('is_connected', true);
+            })
+            ->first();
+
         // Store postback as message first
         CustomerMessage::create([
             'customer_id' => $customer->id,
+            'page_customer_id' => $pageCustomer ? $pageCustomer->id : null,
             'client_id' => $customer->client_id,
             'message_type' => 'incoming',
             'message_content' => $postback['title'] ?? 'Postback',
@@ -424,9 +477,17 @@ class FacebookWebhookController extends Controller
             );
 
             if ($result['success']) {
+                // Get page customer ID for this customer
+                $pageCustomer = \App\Models\PageCustomer::where('customer_id', $customer->id)
+                    ->whereHas('facebookPage', function($q) {
+                        $q->where('is_connected', true);
+                    })
+                    ->first();
+
                 // Log the sent product details as a message
                 CustomerMessage::create([
                     'customer_id' => $customer->id,
+                    'page_customer_id' => $pageCustomer ? $pageCustomer->id : null,
                     'client_id' => $customer->client_id,
                     'message_type' => 'outgoing',
                     'message_content' => 'Product Details: ' . $product->name,
@@ -460,5 +521,28 @@ class FacebookWebhookController extends Controller
                 'error' => $e->getMessage()
             ]);
         }
+    }
+
+    protected function getPageCustomerId(Customer $customer, array $event): ?int
+    {
+        // Extract page ID from recipient in the event
+        $pageId = $event['recipient']['id'] ?? null;
+        if (!$pageId) {
+            return null;
+        }
+
+        // Find the Facebook page
+        $facebookPage = FacebookPage::where('page_id', $pageId)
+            ->where('client_id', $customer->client_id)
+            ->first();
+
+        if (!$facebookPage) {
+            return null;
+        }
+
+        // Find or create page customer relationship
+        $pageCustomer = PageCustomer::findOrCreateForPage($facebookPage, $customer, $customer->facebook_user_id);
+        
+        return $pageCustomer->id;
     }
 }

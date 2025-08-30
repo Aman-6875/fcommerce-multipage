@@ -12,12 +12,16 @@ class Order extends Model
     protected $fillable = [
         'client_id',
         'customer_id', 
+        'page_customer_id',
         'facebook_user_id',
         'facebook_page_id',
         'order_number',
         'invoice_number',
         'total_amount',
         'subtotal',
+        'advance_payment',
+        'discount_amount',
+        'discount_type',
         'shipping_charge',
         'shipping_zone',
         'minimum_order_amount',
@@ -28,6 +32,7 @@ class Order extends Model
         'confirmed_at',
         'shipped_at',
         'delivered_at',
+        'tracking_token',
         'payment_method',
         'notes',
     ];
@@ -38,6 +43,13 @@ class Order extends Model
         'product_selections' => 'array',
         'unit_price' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'advance_payment' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'shipping_charge' => 'decimal:2',
+        'confirmed_at' => 'datetime',
+        'shipped_at' => 'datetime',
+        'delivered_at' => 'datetime',
     ];
 
     // Relationships
@@ -49,6 +61,11 @@ class Order extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function pageCustomer()
+    {
+        return $this->belongsTo(PageCustomer::class);
     }
 
     public function workflow()

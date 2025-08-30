@@ -48,9 +48,12 @@ class MessagesController extends Controller
     public function getCustomers(Request $request)
     {
         $customers = auth('client')->user()->customers()
-            ->with(['messages' => function($query) {
-                $query->latest()->limit(1);
-            }])
+            ->with([
+                'messages' => function($query) {
+                    $query->latest()->limit(1);
+                },
+                'pageCustomers.facebookPage' // Load PageCustomer relationships
+            ])
             ->withCount(['messages as unread_count' => function($query) {
                 $query->where('is_read', false)->where('message_type', 'incoming');
             }])
@@ -61,9 +64,36 @@ class MessagesController extends Controller
             'success' => true,
             'customers' => $customers->map(function($customer) {
                 $lastMessage = $customer->messages->first();
+                
+                // Get primary facebook page from PageCustomer relationships or fallback to direct relationship
+                $primaryPageCustomer = $customer->pageCustomers
+                    ->where('status', 'active')
+                    ->sortByDesc('last_interaction')
+                    ->first();
+                
+                $facebookPage = null;
+                if ($primaryPageCustomer && $primaryPageCustomer->facebookPage) {
+                    $facebookPage = [
+                        'id' => $primaryPageCustomer->facebookPage->id,
+                        'page_id' => $primaryPageCustomer->facebookPage->page_id,
+                        'page_name' => $primaryPageCustomer->facebookPage->page_name
+                    ];
+                } elseif ($customer->facebook_page) {
+                    // Fallback to direct relationship for backward compatibility
+                    $facebookPage = [
+                        'id' => $customer->facebook_page->id,
+                        'page_id' => $customer->facebook_page->page_id,
+                        'page_name' => $customer->facebook_page->page_name
+                    ];
+                }
+                
                 return [
                     'id' => $customer->id,
                     'name' => $customer->name,
+                    'phone' => $customer->phone,
+                    'email' => $customer->email,
+                    'address' => $customer->address,
+                    'facebook_user_id' => $customer->facebook_user_id,
                     'profile_picture' => $customer->profile_data['profile_picture'] ?? null,
                     'unread_count' => $customer->unread_count,
                     'last_interaction' => $customer->last_interaction ? $customer->last_interaction->diffForHumans() : null,
@@ -74,11 +104,19 @@ class MessagesController extends Controller
                         'type' => $lastMessage->message_type
                     ] : null,
                     'page_name' => $customer->profile_data['page_name'] ?? null,
-                    'facebook_page' => $customer->facebook_page ? [
-                        'id' => $customer->facebook_page->id,
-                        'page_id' => $customer->facebook_page->page_id,
-                        'page_name' => $customer->facebook_page->page_name
-                    ] : null
+                    'facebook_page' => $facebookPage,
+                    'page_customers' => $customer->pageCustomers->map(function($pageCustomer) {
+                        return [
+                            'id' => $pageCustomer->id,
+                            'status' => $pageCustomer->status,
+                            'last_interaction' => $pageCustomer->last_interaction,
+                            'facebook_page' => $pageCustomer->facebookPage ? [
+                                'id' => $pageCustomer->facebookPage->id,
+                                'page_id' => $pageCustomer->facebookPage->page_id,
+                                'page_name' => $pageCustomer->facebookPage->page_name
+                            ] : null
+                        ];
+                    })
                 ];
             })
         ]);

@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Services\ProductSelectorService;
 use App\Services\WorkflowMessageService;
 use App\Services\FacebookGraphAPIService;
+use App\Services\CustomerService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
@@ -17,15 +18,18 @@ class WorkflowEngine
     protected ProductSelectorService $productSelector;
     protected WorkflowMessageService $messageService;
     protected FacebookGraphAPIService $facebookService;
+    protected CustomerService $customerService;
 
     public function __construct(
         ProductSelectorService $productSelector,
         WorkflowMessageService $messageService,
-        FacebookGraphAPIService $facebookService
+        FacebookGraphAPIService $facebookService,
+        CustomerService $customerService
     ) {
         $this->productSelector = $productSelector;
         $this->messageService = $messageService;
         $this->facebookService = $facebookService;
+        $this->customerService = $customerService;
     }
 
     /**
@@ -318,6 +322,9 @@ class WorkflowEngine
             // Extract all collected data
             $allResponses = $conversation->getAllResponses();
             
+            // Update customer information from workflow responses
+            $this->updateCustomerFromWorkflow($conversation, $allResponses);
+            
             // Create order from workflow responses
             $order = $this->createOrderFromWorkflow($conversation, $allResponses);
             
@@ -345,6 +352,41 @@ class WorkflowEngine
                 'error' => 'completion_failed',
                 'message' => $this->messageService->getWorkflowCompletionError($conversation->language)
             ];
+        }
+    }
+
+    /**
+     * Update customer information from workflow responses
+     */
+    private function updateCustomerFromWorkflow(ConversationState $conversation, array $responses): void
+    {
+        $customer = $conversation->customer;
+        $customerInfo = $this->extractCustomerInfo($responses);
+        
+        if (!empty($customerInfo)) {
+            // Use CustomerService for phone-first customer management
+            $facebookPage = $conversation->facebookPage;
+            $updatedCustomer = $this->customerService->updateFromWorkflowData($customer, $customerInfo, $facebookPage);
+            
+            // If customer was merged, update the conversation to point to the master customer
+            if ($updatedCustomer->id !== $customer->id) {
+                $conversation->update(['customer_id' => $updatedCustomer->id]);
+                Log::info('Conversation updated to point to merged customer', [
+                    'conversation_id' => $conversation->id,
+                    'old_customer_id' => $customer->id,
+                    'new_customer_id' => $updatedCustomer->id
+                ]);
+            }
+            
+            // Update interaction stats
+            $updatedCustomer->update(['last_interaction' => now()]);
+            $updatedCustomer->increment('interaction_count');
+            
+            Log::info('Customer information updated from workflow using phone-first strategy', [
+                'customer_id' => $updatedCustomer->id,
+                'conversation_id' => $conversation->id,
+                'had_phone' => !empty($customerInfo['phone'])
+            ]);
         }
     }
 
@@ -540,6 +582,13 @@ class WorkflowEngine
             if (isset($stepResponse['email'])) {
                 $customerInfo['email'] = $stepResponse['email'];
             }
+            if (isset($stepResponse['address'])) {
+                $customerInfo['address'] = $stepResponse['address'];
+            }
+            // Also check for delivery address if no specific address field
+            if (!isset($customerInfo['address']) && isset($stepResponse['delivery_address'])) {
+                $customerInfo['address'] = $stepResponse['delivery_address'];
+            }
         }
         
         return $customerInfo;
@@ -732,7 +781,7 @@ class WorkflowEngine
         }
 
         // Try to find product by name
-        $productName = trim($input);
+    $productName = trim($input);
         $selectedProduct = $products->first(function($product) use ($productName) {
             return strtolower($product->name) === strtolower($productName);
         });

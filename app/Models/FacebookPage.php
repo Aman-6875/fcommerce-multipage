@@ -50,6 +50,24 @@ class FacebookPage extends Model
         return $this->hasMany(ConversationState::class);
     }
 
+    /**
+     * Get all page customer relationships
+     */
+    public function pageCustomers()
+    {
+        return $this->hasMany(PageCustomer::class);
+    }
+
+    /**
+     * Get all customers who have interacted with this page
+     */
+    public function customers()
+    {
+        return $this->belongsToMany(Customer::class, 'page_customers')
+                    ->withPivot(['facebook_user_id', 'first_interaction', 'last_interaction', 'interaction_count', 'status'])
+                    ->withTimestamps();
+    }
+
     // Helper methods
     public function isConnected(): bool
     {

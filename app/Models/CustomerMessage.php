@@ -11,6 +11,7 @@ class CustomerMessage extends Model
 
     protected $fillable = [
         'customer_id',
+        'page_customer_id',
         'client_id',
         'message_type',
         'message_content',
@@ -30,6 +31,11 @@ class CustomerMessage extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function pageCustomer()
+    {
+        return $this->belongsTo(PageCustomer::class);
     }
 
     public function client()

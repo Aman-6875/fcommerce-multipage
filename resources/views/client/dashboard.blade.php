@@ -251,7 +251,7 @@
                 <a href="{{ route('client.customers') }}" class="btn btn-block mb-3" style="background: linear-gradient(135deg, #42B883, #369970); color: white; border-radius: 12px; padding: 12px 20px; border: none; transition: all 0.3s ease; text-decoration: none;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(66,184,131,0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
                     <i class="fas fa-users mr-2"></i> {{ __('client.view_customers') }}
                 </a>
-                <a href="{{ route('client.orders') }}" class="btn btn-block mb-3" style="background: linear-gradient(135deg, #FF6B6B, #EE5A52); color: white; border-radius: 12px; padding: 12px 20px; border: none; transition: all 0.3s ease; text-decoration: none;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(255,107,107,0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                <a href="{{ route('client.orders.index') }}" class="btn btn-block mb-3" style="background: linear-gradient(135deg, #FF6B6B, #EE5A52); color: white; border-radius: 12px; padding: 12px 20px; border: none; transition: all 0.3s ease; text-decoration: none;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(255,107,107,0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
                     <i class="fas fa-shopping-cart mr-2"></i> {{ __('client.manage_orders') }}
                 </a>
                 @if($client->isPremium())
@@ -320,7 +320,7 @@
                     <h4 style="color: #2d3748; font-weight: 700; margin: 0; display: flex; align-items: center;">
                         <i class="fas fa-shopping-cart mr-2" style="color: #FF6B6B;"></i> {{ __('client.recent_orders') }}
                     </h4>
-                    <a href="{{ route('client.orders') }}" style="background: linear-gradient(135deg, #FF6B6B, #EE5A52); color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                    <a href="{{ route('client.orders.index') }}" style="background: linear-gradient(135deg, #FF6B6B, #EE5A52); color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
                         {{ __('client.view_all') }}
                     </a>
                 </div>

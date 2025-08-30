@@ -13,6 +13,7 @@ class ConversationState extends Model
 
     protected $fillable = [
         'customer_id',
+        'page_customer_id',
         'workflow_id',
         'facebook_page_id',
         'current_step_index',
@@ -39,6 +40,11 @@ class ConversationState extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function pageCustomer(): BelongsTo
+    {
+        return $this->belongsTo(PageCustomer::class);
     }
 
     public function workflow(): BelongsTo

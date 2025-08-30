@@ -435,4 +435,130 @@ class FacebookGraphAPIService
         }
     }
 
+    /**
+     * Get user profile information from Facebook Graph API
+     * Note: Phone numbers are not available through Facebook API
+     */
+    public function getUserProfile(string $pageToken, string $userId): ?array
+    {
+        try {
+            $response = Http::get($this->baseUrl . "/{$userId}", [
+                'fields' => 'id,name,first_name,last_name,profile_pic',
+                'access_token' => $pageToken
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                Log::info('Successfully fetched user profile', [
+                    'user_id' => $userId,
+                    'name' => $data['name'] ?? 'Unknown'
+                ]);
+                return $data;
+            }
+
+            Log::warning('Failed to fetch user profile', [
+                'user_id' => $userId,
+                'status' => $response->status(),
+                'response' => $response->body()
+            ]);
+            
+            return null;
+
+        } catch (\Exception $e) {
+            Log::error('Exception fetching user profile', [
+                'user_id' => $userId,
+                'message' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Update customer with Facebook profile information
+     */
+    public function updateCustomerWithFacebookProfile(Customer $customer, FacebookPage $facebookPage): void
+    {
+        try {
+            if (!$customer->facebook_user_id || !$facebookPage->access_token) {
+                return;
+            }
+
+            $profile = $this->getUserProfile($facebookPage->access_token, $customer->facebook_user_id);
+            
+            if ($profile) {
+                $updateData = [];
+                
+                // Only update name if it's still default "Facebook User"
+                if (($customer->name === 'Facebook User' || empty($customer->name)) && !empty($profile['name'])) {
+                    $updateData['name'] = $profile['name'];
+                }
+                
+                // Update profile data
+                $profileData = $customer->profile_data ?? [];
+                $profileData['facebook_profile'] = [
+                    'name' => $profile['name'] ?? null,
+                    'first_name' => $profile['first_name'] ?? null,
+                    'last_name' => $profile['last_name'] ?? null,
+                    'profile_pic' => $profile['profile_pic'] ?? null,
+                    'updated_at' => now()->toISOString()
+                ];
+                $updateData['profile_data'] = $profileData;
+                
+                if (!empty($updateData)) {
+                    $customer->update($updateData);
+                    
+                    Log::info('Customer updated with Facebook profile', [
+                        'customer_id' => $customer->id,
+                        'facebook_name' => $profile['name'] ?? 'Unknown'
+                    ]);
+                }
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to update customer with Facebook profile', [
+                'customer_id' => $customer->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function sendTemplateMessage(string $recipientId, array $messageData, string $pageAccessToken): bool
+    {
+        try {
+            $url = $this->baseUrl . '/me/messages';
+
+            $payload = [
+                'recipient' => [
+                    'id' => $recipientId,
+                ],
+                'message'   => $messageData,
+            ];
+
+            $response = Http::withToken($pageAccessToken)
+                ->post($url, $payload);
+
+            if ($response->successful()) {
+                Log::info('Facebook template message sent successfully', [
+                    'recipient_id' => $recipientId,
+                    'response' => $response->json(),
+                ]);
+                return true;
+            }
+
+            Log::error('Failed to send Facebook template message', [
+                'recipient_id' => $recipientId,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return false;
+
+        } catch (\Exception $e) {
+            Log::error('Exception while sending Facebook template message', [
+                'recipient_id' => $recipientId,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
 }

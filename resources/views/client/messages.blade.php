@@ -389,6 +389,7 @@
         max-height: calc(100vh - 340px);
     }
     
+    
     .message-item {
         margin-bottom: 20px;
         display: flex;
@@ -941,8 +942,11 @@
                             <button class="btn btn-sm btn-outline-primary me-2" id="send-products-btn" onclick="openProductModal()">
                                 <i class="fas fa-shopping-bag"></i> Send Products
                             </button>
-                            <button class="btn btn-sm btn-outline-info" id="send-services-btn" onclick="openServiceModal()">
+                            <button class="btn btn-sm btn-outline-info me-2" id="send-services-btn" onclick="openServiceModal()">
                                 <i class="fas fa-wrench"></i> Send Services
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" id="create-order-btn" onclick="openCreateOrderModal()">
+                                <i class="fas fa-plus-circle"></i> Create Order
                             </button>
                         </div>
                         
@@ -987,10 +991,8 @@ $(document).ready(function() {
         typingIndicator: {{ env('MESSAGES_TYPING_INDICATOR', 'true') ? 'true' : 'false' }}
     };
     
-    let selectedCustomerId = {{ $selectedCustomer ? $selectedCustomer->id : 'null' }};
-    let lastMessageId = 0;
+    selectedCustomerId = {{ $selectedCustomer ? $selectedCustomer->id : 'null' }}; // Use global variable
     let updateInterval;
-    let isLoading = false;
     let lastSeenMessages = {}; // Track last seen message ID for each customer
     let soundEnabled = true;
     
@@ -1113,10 +1115,12 @@ $(document).ready(function() {
     }
     
     // Update customers list
-    function updateCustomersList(customers) {
+    function updateCustomersList(customersData) {
+        // Store customers data in global variable for modal access
+        customers = customersData;
         const customersList = $('#customers-list');
         
-        if (customers.length === 0) {
+        if (customersData.length === 0) {
             customersList.html(`
                 <div class="text-center p-4">
                     <i class="fas fa-users mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
@@ -1128,7 +1132,7 @@ $(document).ready(function() {
         }
         
         // Sort customers: unread messages first, then by last interaction
-        const sortedCustomers = customers.sort((a, b) => {
+        const sortedCustomers = customersData.sort((a, b) => {
             // First priority: customers with unread messages
             if (a.unread_count > 0 && b.unread_count === 0) return -1;
             if (b.unread_count > 0 && a.unread_count === 0) return 1;
@@ -1259,7 +1263,7 @@ $(document).ready(function() {
     
     // Update customer header
     function updateCustomerHeader(customer) {
-        console.log('Updating customer header:', customer); // Debug log
+        console.log('Updating customer header:', customer);
         
         const avatarHtml = customer.profile_picture 
             ? `<img src="${customer.profile_picture}" alt="Profile">`
@@ -1277,13 +1281,18 @@ $(document).ready(function() {
         
         $('#selected-customer-info').html(infoText);
         
-        // Update EMERGENCY header (always visible one)
-        $('#customer-name-display').text(customer.name || 'Facebook User');
-        $('#customer-info-display').text(infoText);
-        
-        // Debug logging - only check emergency header now
-        console.log('Emergency header - Name:', $('#customer-name-display').text());
-        console.log('Emergency header - Info:', $('#customer-info-display').text());
+        // Update EMERGENCY header
+        $('#customer-name-display').text(customer.name || 'Unknown Customer');
+        $('#customer-info-display').html(infoText);
+    }
+    
+    function showConnectionStatus(status) {
+        const statusEl = $('#connection-status');
+        statusEl.removeClass('online offline').addClass(status);
+        statusEl.text(status === 'online' ? 'Connected' : 'Disconnected');
+        if (status === 'online') {
+            setTimeout(() => statusEl.hide(), 2000);
+        }
     }
     
     // Display messages
@@ -1314,6 +1323,111 @@ $(document).ready(function() {
             $('#messages-body').append(createMessageHtml(message));
         });
         scrollToBottom();
+    }
+    
+    // Create message HTML
+    function createMessageHtml(message) {
+        const isOutgoing = message.type === 'outgoing';
+        const bubbleClass = isOutgoing ? 'outgoing' : 'incoming';
+        
+        // Determine status icon based on message state
+        let statusIcon = 'fa-check';
+        let statusColor = '#999';
+        let statusTitle = 'Sent';
+        
+        if (isOutgoing) {
+            if (message.is_read) {
+                statusIcon = 'fa-check-double';
+                statusColor = '#4CAF50';
+                statusTitle = 'Read';
+            } else {
+                statusIcon = 'fa-check';
+                statusColor = '#999';
+                statusTitle = 'Sent';
+            }
+        }
+        
+        return `
+            <div class="message ${bubbleClass}">
+                <div class="message-bubble">
+                    ${escapeHtml(message.content)}
+                    <div class="message-meta">
+                        <span class="message-time">${message.formatted_time || message.time}</span>
+                        ${isOutgoing ? `<i class="fas ${statusIcon} message-status" style="color: ${statusColor};" title="${statusTitle}"></i>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    function scrollToBottom() {
+        const messagesBody = $('#messages-body');
+        messagesBody.scrollTop(messagesBody[0].scrollHeight);
+    }
+    
+    // Show notification to user
+    function showNotification(message, type = 'info') {
+        // Remove existing notifications
+        $('.notification').remove();
+        
+        const typeIcons = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-circle', 
+            warning: 'fa-exclamation-triangle',
+            info: 'fa-info-circle'
+        };
+        
+        const typeColors = {
+            success: '#28a745',
+            error: '#dc3545',
+            warning: '#ffc107',
+            info: '#17a2b8'
+        };
+        
+        const notification = $(`
+            <div class="notification ${type}" style="
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: white;
+                border: 1px solid ${typeColors[type]};
+                border-left: 4px solid ${typeColors[type]};
+                border-radius: 8px;
+                padding: 15px 20px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10000;
+                max-width: 400px;
+                animation: slideInRight 0.3s ease-out;
+            ">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas ${typeIcons[type]}" style="color: ${typeColors[type]}; font-size: 18px;"></i>
+                    <span style="flex: 1; color: #333; font-size: 14px;">${escapeHtml(message)}</span>
+                    <button onclick="$(this).parent().parent().remove()" style="
+                        background: none;
+                        border: none;
+                        color: #999;
+                        cursor: pointer;
+                        font-size: 16px;
+                        padding: 0;
+                        margin-left: 10px;
+                    ">&times;</button>
+                </div>
+            </div>
+        `);
+        
+        $('body').append(notification);
+        
+        // Auto-remove after delay
+        const delay = type === 'error' ? 5000 : 3000;
+        setTimeout(() => {
+            notification.fadeOut(300, () => notification.remove());
+        }, delay);
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     // Create message HTML
@@ -1512,18 +1626,6 @@ $(document).ready(function() {
         });
     });
     
-    // Utility functions
-    function scrollToBottom() {
-        const messagesBody = $('#messages-body');
-        messagesBody.scrollTop(messagesBody[0].scrollHeight);
-    }
-    
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-    
     // Format message time consistently
     function formatMessageTime() {
         return new Date().toLocaleString('en-US', {
@@ -1545,63 +1647,6 @@ $(document).ready(function() {
     }
     
     // Show notification to user
-    function showNotification(message, type = 'info') {
-        // Remove existing notifications
-        $('.notification').remove();
-        
-        const typeIcons = {
-            success: 'fa-check-circle',
-            error: 'fa-exclamation-circle', 
-            warning: 'fa-exclamation-triangle',
-            info: 'fa-info-circle'
-        };
-        
-        const typeColors = {
-            success: '#28a745',
-            error: '#dc3545',
-            warning: '#ffc107',
-            info: '#17a2b8'
-        };
-        
-        const notification = $(`
-            <div class="notification ${type}" style="
-                position: fixed;
-                top: 80px;
-                right: 20px;
-                background: white;
-                border: 1px solid ${typeColors[type]};
-                border-left: 4px solid ${typeColors[type]};
-                border-radius: 8px;
-                padding: 15px 20px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 10000;
-                max-width: 400px;
-                animation: slideInRight 0.3s ease-out;
-            ">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <i class="fas ${typeIcons[type]}" style="color: ${typeColors[type]}; font-size: 18px;"></i>
-                    <span style="flex: 1; color: #333; font-size: 14px;">${escapeHtml(message)}</span>
-                    <button onclick="$(this).parent().parent().remove()" style="
-                        background: none;
-                        border: none;
-                        color: #999;
-                        cursor: pointer;
-                        font-size: 16px;
-                        padding: 0;
-                        margin-left: 10px;
-                    ">&times;</button>
-                </div>
-            </div>
-        `);
-        
-        $('body').append(notification);
-        
-        // Auto-remove after delay
-        const delay = type === 'error' ? 5000 : 3000;
-        setTimeout(() => {
-            notification.fadeOut(300, () => notification.remove());
-        }, delay);
-    }
     
     // Check if we're on mobile device
     function isMobile() {
@@ -1829,112 +1874,622 @@ $(document).ready(function() {
             clearInterval(updateInterval);
         }
     });
-    
-    // Product Selection Modal Functions
-    function openProductModal() {
+});
+
+// Global Variables
+let currentFacebookPageId = null;
+let selectedProducts = [];
+const maxProductSelection = 3;
+let selectedCustomerId = null;
+let customers = [];
+let lastMessageId = 0;
+let isLoading = false;
+
+function openProductModal() {
         if (!selectedCustomerId) {
             showNotification('Please select a customer first', 'warning');
             return;
         }
         
-        // Get customer data and Facebook page
+        // Get customer data and find their primary page customer relationship
         const customer = customers.find(c => c.id == selectedCustomerId);
-        if (!customer || !customer.facebook_page) {
-            showNotification('Customer Facebook page not found', 'error');
+        if (!customer) {
+            showNotification('Customer not found', 'error');
             return;
         }
         
-        currentFacebookPageId = customer.facebook_page.id;
+        // Get Facebook page ID - support both PageCustomer architecture and backward compatibility
+        let facebookPageId = null;
+        
+        // First try PageCustomer relationships (new architecture)
+        if (customer.page_customers && customer.page_customers.length > 0) {
+            const activePageCustomer = customer.page_customers
+                .filter(pc => pc.status === 'active' && pc.facebook_page)
+                .sort((a, b) => new Date(b.last_interaction) - new Date(a.last_interaction))[0];
+            
+            if (activePageCustomer && activePageCustomer.facebook_page) {
+                facebookPageId = activePageCustomer.facebook_page.id;
+            }
+        }
+        
+        // Fallback to direct facebook_page relationship (backward compatibility)
+        if (!facebookPageId && customer.facebook_page && customer.facebook_page.id) {
+            facebookPageId = customer.facebook_page.id;
+        }
+        
+        if (!facebookPageId) {
+            showNotification('Customer Facebook page not found. This customer may not have a Facebook page associated.', 'error');
+            console.log('Customer data:', customer); // Debug log
+            return;
+        }
+        
+        currentFacebookPageId = facebookPageId;
         $('#productModalTitle').text(`Send Products to ${customer.name}`);
         $('#productModal').modal('show');
         loadProductsForModal('', '');
     }
+
+function openServiceModal() {
+    // Simple fallback notification since showNotification is in document ready block
+    alert('Services modal coming soon!');
+}
+
+// Global notification function
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    $('.notification').remove();
     
-    let currentFacebookPageId = null;
-    let selectedProducts = [];
-    const maxProductSelection = 3;
+    const typeIcons = {
+        success: 'fa-check-circle',
+        error: 'fa-exclamation-circle', 
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+    };
     
-    function loadProductsForModal(search = '', category = '') {
-        if (!currentFacebookPageId) return;
-        
-        $('#productModalLoading').show();
-        $('#productModalContent').hide();
-        
-        $.get(`/client/products/modal/${currentFacebookPageId}`, {
-            search: search,
-            category: category
-        })
-        .done(function(response) {
-            renderProductsList(response.products);
-            renderCategoriesDropdown(response.categories);
-            $('#productModalLoading').hide();
-            $('#productModalContent').show();
-        })
-        .fail(function(xhr) {
-            $('#productModalLoading').hide();
-            showNotification('Failed to load products', 'error');
-            console.error('Product loading error:', xhr.responseJSON);
+    const typeColors = {
+        success: '#28a745',
+        error: '#dc3545',
+        warning: '#ffc107',
+        info: '#17a2b8'
+    };
+    
+    const notification = $(`
+        <div class="notification ${type}" style="
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: white;
+            border: 1px solid ${typeColors[type]};
+            border-left: 4px solid ${typeColors[type]};
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1060;
+            min-width: 300px;
+            max-width: 400px;
+            word-wrap: break-word;
+        ">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="color: ${typeColors[type]};">
+                    <i class="fas ${typeIcons[type]} me-2"></i>
+                    ${message}
+                </div>
+                <button type="button" style="border: none; background: none; font-size: 18px; cursor: pointer; color: #999;" onclick="$(this).closest('.notification').remove();">
+                    ×
+                </button>
+            </div>
+        </div>
+    `);
+    
+    $('body').append(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        notification.fadeOut(() => {
+            notification.remove();
         });
+    }, 5000);
+}
+
+// Order creation modal functions
+function openCreateOrderModal() {
+    if (!selectedCustomerId) {
+        showNotification('Please select a customer first', 'warning');
+        return;
     }
     
-    function renderProductsList(products) {
-        const container = $('#productsList');
-        container.empty();
+    // Get customer data
+    const customer = customers.find(c => c.id == selectedCustomerId);
+    if (!customer) {
+        showNotification('Customer not found', 'error');
+        return;
+    }
+    
+    // Reset form
+    $('#createOrderForm')[0].reset();
+    $('#productRows').empty();
+    productRowCounter = 0;
+    
+    // Pre-fill customer information
+    $('#customer_name').val(customer.name || '');
+    $('#customer_phone').val(customer.phone || '');
+    $('#customer_email').val(customer.email || '');
+    $('#customer_address').val(customer.address || '');
+    
+    // Set default shipping charge
+    $('#shipping_charge').val('60');
+    
+    // Load customer dropdown options
+    loadCustomersForDropdown();
+    
+    // Show modal
+    $('#createOrderModal').modal('show');
+}
+
+// Order Management JavaScript (from orders page)
+let productRowCounter = 0;
+
+function loadCustomersForDropdown() {
+    const customerSelect = $('#customer_id');
+    customerSelect.empty().append('<option value="">Select customer or create new</option>');
+    
+    customers.forEach(customer => {
+        const option = $(`<option value="${customer.id}" 
+                           data-name="${customer.name || ''}" 
+                           data-phone="${customer.phone || ''}" 
+                           data-email="${customer.email || ''}"
+                           data-address="${customer.address || ''}">
+                           ${customer.name} - ${customer.phone}
+                       </option>`);
+        customerSelect.append(option);
+    });
+    
+    // Pre-select current customer if available
+    if (selectedCustomerId) {
+        customerSelect.val(selectedCustomerId);
+    }
+}
+
+function addProductRow() {
+    productRowCounter++;
+    
+    // Get customer's Facebook page ID
+    const customer = customers.find(c => c.id == selectedCustomerId);
+    if (!customer) {
+        alert('Customer not found');
+        return;
+    }
+    
+    // Get Facebook page ID - support both PageCustomer architecture and backward compatibility
+    let facebookPageId = null;
+    
+    // First try PageCustomer relationships (new architecture)
+    if (customer.page_customers && customer.page_customers.length > 0) {
+        const activePageCustomer = customer.page_customers
+            .filter(pc => pc.status === 'active' && pc.facebook_page)
+            .sort((a, b) => new Date(b.last_interaction) - new Date(a.last_interaction))[0];
         
-        if (products.length === 0) {
-            container.html('<div class="text-center text-muted py-4">No products found</div>');
-            return;
+        if (activePageCustomer && activePageCustomer.facebook_page) {
+            facebookPageId = activePageCustomer.facebook_page.id;
         }
-        
-        products.forEach(function(product) {
-            const isSelected = selectedProducts.find(p => p.id === product.id);
-            const effectivePrice = product.sale_price || product.price;
-            const formattedPrice = '৳' + Number(effectivePrice).toLocaleString();
+    }
+    
+    // Fallback to direct facebook_page relationship (backward compatibility)
+    if (!facebookPageId && customer.facebook_page && customer.facebook_page.id) {
+        facebookPageId = customer.facebook_page.id;
+    }
+    
+    if (!facebookPageId) {
+        alert('Customer Facebook page not found. Cannot load products.');
+        return;
+    }
+    
+    // Get products from the API (page-specific)
+    $.get(`/client/api/products/${facebookPageId}`)
+        .done(function(response) {
+            let products = response.data || [];
             
-            const productHtml = `
-                <div class="product-item border rounded p-3 mb-3 ${isSelected ? 'selected' : ''}" data-product-id="${product.id}">
-                    <div class="row align-items-center">
-                        <div class="col-2">
-                            ${product.image_url ? 
-                                `<img src="${product.image_url}" class="img-fluid rounded" style="max-height: 50px;">` : 
-                                `<div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 50px; width: 50px;"><i class="fas fa-image text-muted"></i></div>`
-                            }
+            let productOptions = '<option value="">Select Product</option>';
+            products.forEach(product => {
+                const price = product.sale_price || product.price;
+                productOptions += `<option value="${product.id}" data-price="${price}" data-name="${product.name}">${product.name} - ৳${price}</option>`;
+            });
+            
+            const row = `
+                <tr id="productRow${productRowCounter}">
+                    <td>
+                        <select class="form-control product-select" name="products[${productRowCounter}][product_id]" data-row="${productRowCounter}" required>
+                            ${productOptions}
+                        </select>
+                        <input type="hidden" class="product-name" name="products[${productRowCounter}][product_name]">
+                    </td>
+                    <td>
+                        <input type="number" class="form-control product-quantity" name="products[${productRowCounter}][quantity]" 
+                               data-row="${productRowCounter}" min="1" value="1" required>
+                    </td>
+                    <td>
+                        <input type="number" class="form-control product-price" name="products[${productRowCounter}][unit_price]" 
+                               data-row="${productRowCounter}" min="0" step="0.01" required>
+                    </td>
+                    <td>
+                        <input type="number" class="form-control product-discount" name="products[${productRowCounter}][discount_amount]" 
+                               data-row="${productRowCounter}" min="0" step="0.01" value="0">
+                    </td>
+                    <td>
+                        <span class="product-total" id="productTotal${productRowCounter}">৳0.00</span>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeProductRow(${productRowCounter})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            
+            $('#productRows').append(row);
+            
+            // Bind events to new row
+            bindProductRowEvents(productRowCounter);
+        })
+        .fail(function() {
+            alert('Failed to load products');
+        });
+}
+
+function bindProductRowEvents(rowId) {
+    // Product selection
+    $(document).on('change', `[data-row="${rowId}"].product-select`, function() {
+        const selectedOption = $(this).find(':selected');
+        const price = selectedOption.data('price') || 0;
+        const name = selectedOption.data('name') || '';
+        
+        $(`[data-row="${rowId}"].product-price`).val(price);
+        $(`[data-row="${rowId}"] .product-name`).val(name);
+        calculateProductTotal(rowId);
+    });
+    
+    // Quantity, price, discount changes
+    $(document).on('input', `[data-row="${rowId}"].product-quantity, [data-row="${rowId}"].product-price, [data-row="${rowId}"].product-discount`, function() {
+        calculateProductTotal(rowId);
+    });
+}
+
+function removeProductRow(rowId) {
+    $(`#productRow${rowId}`).remove();
+    calculateOrderTotal();
+}
+
+function calculateProductTotal(rowId) {
+    const quantity = parseFloat($(`[data-row="${rowId}"].product-quantity`).val()) || 0;
+    const price = parseFloat($(`[data-row="${rowId}"].product-price`).val()) || 0;
+    const discount = parseFloat($(`[data-row="${rowId}"].product-discount`).val()) || 0;
+    
+    const total = Math.max(0, (quantity * price) - discount);
+    $(`#productTotal${rowId}`).text('৳' + total.toFixed(2));
+    
+    calculateOrderTotal();
+}
+
+function calculateOrderTotal() {
+    let subtotal = 0;
+    
+    // Calculate products subtotal
+    $('.product-total').each(function() {
+        const amount = parseFloat($(this).text().replace('৳', '')) || 0;
+        subtotal += amount;
+    });
+    
+    // Get other values
+    const shipping = parseFloat($('#shipping_charge').val()) || 0;
+    const advance = parseFloat($('#advance_payment').val()) || 0;
+    const discountAmount = parseFloat($('#order_discount').val()) || 0;
+    const discountType = $('#discount_type').val();
+    
+    // Calculate order discount
+    let orderDiscount = 0;
+    if (discountType === 'percentage') {
+        orderDiscount = (subtotal * discountAmount) / 100;
+    } else {
+        orderDiscount = Math.min(discountAmount, subtotal);
+    }
+    
+    const finalSubtotal = subtotal - orderDiscount;
+    const total = finalSubtotal + shipping;
+    const remaining = total - advance;
+    
+    // Update display
+    $('#orderSubtotal').text('৳' + subtotal.toFixed(2));
+    $('#shippingAmount').text('৳' + shipping.toFixed(2));
+    $('#totalAmount').text('৳' + total.toFixed(2));
+    
+    // Show/hide discount row
+    if (orderDiscount > 0) {
+        $('#orderDiscountRow').show();
+        $('#orderDiscountAmount').text('-৳' + orderDiscount.toFixed(2));
+    } else {
+        $('#orderDiscountRow').hide();
+    }
+    
+    // Show/hide advance payment rows
+    if (advance > 0) {
+        $('#advancePaymentRow, #remainingRow').show();
+        $('#advanceAmount').text('৳' + advance.toFixed(2));
+        $('#remainingAmount').text('৳' + remaining.toFixed(2));
+    } else {
+        $('#advancePaymentRow, #remainingRow').hide();
+    }
+}
+
+function createOrderFromChat() {
+    const formData = new FormData(document.getElementById('createOrderForm'));
+    
+    // Basic validation
+    if (!formData.get('customer_info[name]') || !formData.get('customer_info[phone]')) {
+        alert('Please fill required fields: Customer name and phone');
+        return;
+    }
+    
+    // Check if at least one product is added
+    if ($('#productRows tr').length === 0) {
+        alert('Please add at least one product');
+        return;
+    }
+    
+    // Add existing customer ID to prevent duplicate customer creation
+    if (selectedCustomerId) {
+        formData.append('customer_id', selectedCustomerId);
+    }
+    
+    // Add facebook page ID (required for page-specific orders)
+    const customer = customers.find(c => c.id == selectedCustomerId);
+    let facebookPageId = null;
+    
+    // Get Facebook page ID - support both PageCustomer architecture and backward compatibility
+    if (customer.page_customers && customer.page_customers.length > 0) {
+        const activePageCustomer = customer.page_customers
+            .filter(pc => pc.status === 'active' && pc.facebook_page)
+            .sort((a, b) => new Date(b.last_interaction) - new Date(a.last_interaction))[0];
+        
+        if (activePageCustomer && activePageCustomer.facebook_page) {
+            facebookPageId = activePageCustomer.facebook_page.id;
+        }
+    }
+    
+    // Fallback to direct facebook_page relationship (backward compatibility)
+    if (!facebookPageId && customer.facebook_page && customer.facebook_page.id) {
+        facebookPageId = customer.facebook_page.id;
+    }
+    
+    if (!facebookPageId) {
+        alert('Customer Facebook page not found. Cannot create order.');
+        return;
+    }
+    
+    formData.append('facebook_page_id', facebookPageId);
+    
+    const createButton = $('button[onclick="createOrderFromChat()"]');
+    const originalText = createButton.html();
+    createButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating...');
+    
+    $.ajax({
+        url: '/client/orders',
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            $('#createOrderModal').modal('hide');
+            showNotification('Order created successfully!', 'success');
+            
+            // Auto-send invoice if order was created successfully
+            if (response.success && response.order_id) {
+                console.log('Order created successfully, sending invoice for order:', response.order_id);
+                
+                // Check if customer has facebook_user_id before trying to send invoice
+                const customer = customers.find(c => c.id == selectedCustomerId);
+                if (!customer || !customer.facebook_user_id) {
+                    console.log('Customer missing facebook_user_id:', customer);
+                    showNotification('Order created successfully! Note: Cannot send invoice automatically - customer has no Facebook user ID. You can send it manually.', 'warning');
+                    return;
+                }
+                
+                sendInvoiceToCustomer(response.order_id);
+            } else {
+                console.log('Order creation response:', response);
+            }
+        },
+        error: function(xhr) {
+            if (xhr.status === 422) {
+                const errors = xhr.responseJSON.errors;
+                let errorMessage = 'Validation errors:\n';
+                Object.keys(errors).forEach(key => {
+                    errorMessage += `- ${errors[key][0]}\n`;
+                });
+                alert(errorMessage);
+            } else {
+                const errorMsg = xhr.responseJSON?.message || 'Failed to create order';
+                showNotification(errorMsg, 'error');
+            }
+        },
+        complete: function() {
+            createButton.prop('disabled', false).html(originalText);
+        }
+    });
+}
+
+function sendInvoiceToCustomer(orderId) {
+    console.log('Sending invoice for order ID:', orderId);
+    
+    $.ajax({
+        url: `/client/orders/${orderId}/send-invoice`,
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            console.log('Invoice response:', response);
+            
+            if (response.success) {
+                showNotification('Invoice sent to customer via message!', 'success');
+                
+                // Refresh messages to show the sent invoice
+                setTimeout(() => {
+                    if (selectedCustomerId) {
+                        // Reload the page to show updated messages
+                        window.location.reload();
+                    }
+                }, 1000);
+            } else {
+                console.log('Invoice sending failed:', response.message);
+                showNotification('Order created but failed to send invoice: ' + (response.message || 'Unknown error'), 'warning');
+            }
+        },
+        error: function(xhr) {
+            console.log('Invoice AJAX error:', xhr.responseJSON);
+            const errorMsg = xhr.responseJSON?.message || 'Failed to send invoice';
+            showNotification('Order created but failed to send invoice: ' + errorMsg, 'warning');
+        }
+    });
+}
+
+
+// Product Modal Functions (Global scope)
+function loadProductsForModal(search = '', category = '') {
+    if (!currentFacebookPageId) return;
+    
+    $('#productModalLoading').show();
+    $('#productModalContent').hide();
+    
+    $.get(`/client/products/modal/${currentFacebookPageId}`, {
+        search: search,
+        category: category
+    })
+    .done(function(response) {
+        renderProductsList(response.products);
+        renderCategoriesDropdown(response.categories);
+        $('#productModalLoading').hide();
+        $('#productModalContent').show();
+    })
+    .fail(function(xhr) {
+        $('#productModalLoading').hide();
+        showNotification('Failed to load products', 'error');
+        console.error('Product loading error:', xhr.responseJSON);
+    });
+}
+
+function renderProductsList(products) {
+    const container = $('#productsList');
+    container.empty();
+    
+    if (products.length === 0) {
+        container.html('<div class="text-center text-muted py-4">No products found</div>');
+        return;
+    }
+    
+    products.forEach(function(product) {
+        const isSelected = selectedProducts.find(p => p.id === product.id);
+        const effectivePrice = product.sale_price || product.price;
+        const formattedPrice = '৳' + Number(effectivePrice).toLocaleString();
+        
+        const productHtml = `
+            <div class="product-item border rounded p-3 mb-3 ${isSelected ? 'selected' : ''}" data-product-id="${product.id}">
+                <div class="row align-items-center">
+                    <div class="col-2">
+                        ${product.image_url ? 
+                            `<img src="${product.image_url}" class="img-fluid rounded" style="max-height: 50px;">` : 
+                            `<div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 50px; width: 50px;"><i class="fas fa-image text-muted"></i></div>`
+                        }
+                    </div>
+                    <div class="col-7">
+                        <h6 class="mb-1">${product.name}</h6>
+                        <small class="text-muted">SKU: ${product.sku || 'N/A'} | Stock: ${product.stock_quantity}</small>
+                        <div class="mt-1">
+                            <span class="badge badge-secondary">${product.category || 'Uncategorized'}</span>
                         </div>
-                        <div class="col-7">
-                            <h6 class="mb-1">${product.name}</h6>
-                            <small class="text-muted">SKU: ${product.sku || 'N/A'} | Stock: ${product.stock_quantity}</small>
-                            <div class="mt-1">
-                                <span class="badge badge-secondary">${product.category || 'Uncategorized'}</span>
-                            </div>
-                        </div>
-                        <div class="col-2 text-end">
-                            <strong class="text-primary">${formattedPrice}</strong>
-                            ${product.sale_price ? '<br><small class="text-muted"><s>৳' + Number(product.price).toLocaleString() + '</s></small>' : ''}
-                        </div>
-                        <div class="col-1">
-                            <div class="form-check">
-                                <input class="form-check-input product-checkbox" type="checkbox" 
-                                       value="${product.id}" ${isSelected ? 'checked' : ''}
-                                       ${selectedProducts.length >= maxProductSelection && !isSelected ? 'disabled' : ''}>
-                            </div>
+                    </div>
+                    <div class="col-2 text-end">
+                        <strong class="text-primary">${formattedPrice}</strong>
+                        ${product.sale_price ? '<br><small class="text-muted"><s>৳' + Number(product.price).toLocaleString() + '</s></small>' : ''}
+                    </div>
+                    <div class="col-1">
+                        <div class="form-check">
+                            <input class="form-check-input product-checkbox" type="checkbox" 
+                                   value="${product.id}" ${isSelected ? 'checked' : ''}
+                                   ${selectedProducts.length >= maxProductSelection && !isSelected ? 'disabled' : ''}>
                         </div>
                     </div>
                 </div>
-            `;
-            
-            container.append(productHtml);
-        });
-    }
-    
-    function renderCategoriesDropdown(categories) {
-        const dropdown = $('#categoryFilter');
-        dropdown.empty().append('<option value="">All Categories</option>');
+            </div>
+        `;
         
-        categories.forEach(function(category) {
-            dropdown.append(`<option value="${category}">${category}</option>`);
-        });
+        container.append(productHtml);
+    });
+}
+
+function renderCategoriesDropdown(categories) {
+    const dropdown = $('#categoryFilter');
+    dropdown.empty().append('<option value="">All Categories</option>');
+    
+    categories.forEach(function(category) {
+        dropdown.append(`<option value="${category}">${category}</option>`);
+    });
+}
+
+function updateProductSelection() {
+    const count = selectedProducts.length;
+    $('#selectedProductsCount').text(`${count}/${maxProductSelection} selected`);
+    $('#sendSelectedProducts').prop('disabled', count === 0);
+    
+    // Enable/disable checkboxes based on limit
+    $('.product-checkbox:not(:checked)').prop('disabled', count >= maxProductSelection);
+}
+
+function sendSelectedProducts() {
+    if (selectedProducts.length === 0) {
+        showNotification('Please select at least one product', 'warning');
+        return;
     }
     
+    const productIds = selectedProducts.map(p => p.id);
+    
+    $('#sendSelectedProducts').prop('disabled', true).text('Sending...');
+    
+    $.post(`/client/messages/${selectedCustomerId}/send-products`, {
+        product_ids: productIds,
+        facebook_page_id: currentFacebookPageId
+    })
+    .done(function(response) {
+        $('#productModal').modal('hide');
+        showNotification('Products sent successfully!', 'success');
+        // Refresh messages to show the sent product carousel
+        loadMessages(selectedCustomerId);
+    })
+    .fail(function(xhr) {
+        showNotification('Failed to send products', 'error');
+        console.error('Send products error:', xhr.responseJSON);
+    })
+    .always(function() {
+        $('#sendSelectedProducts').prop('disabled', false).text('Send Selected Products');
+    });
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Initialize product modal event handlers
+$(document).ready(function() {
     // Product selection handling
     $(document).on('change', '.product-checkbox', function() {
         const productId = parseInt($(this).val());
@@ -1966,15 +2521,6 @@ $(document).ready(function() {
         updateProductSelection();
     });
     
-    function updateProductSelection() {
-        const count = selectedProducts.length;
-        $('#selectedProductsCount').text(`${count}/${maxProductSelection} selected`);
-        $('#sendSelectedProducts').prop('disabled', count === 0);
-        
-        // Enable/disable checkboxes based on limit
-        $('.product-checkbox:not(:checked)').prop('disabled', count >= maxProductSelection);
-    }
-    
     // Search and filter handlers
     $('#productSearch').on('input', debounce(function() {
         const search = $(this).val();
@@ -1988,36 +2534,6 @@ $(document).ready(function() {
         loadProductsForModal(search, category);
     });
     
-    // Send selected products
-    function sendSelectedProducts() {
-        if (selectedProducts.length === 0) {
-            showNotification('Please select at least one product', 'warning');
-            return;
-        }
-        
-        const productIds = selectedProducts.map(p => p.id);
-        
-        $('#sendSelectedProducts').prop('disabled', true).text('Sending...');
-        
-        $.post(`/client/messages/${selectedCustomerId}/send-products`, {
-            product_ids: productIds,
-            facebook_page_id: currentFacebookPageId
-        })
-        .done(function(response) {
-            $('#productModal').modal('hide');
-            showNotification('Products sent successfully!', 'success');
-            // Refresh messages to show the sent product carousel
-            loadMessages(selectedCustomerId);
-        })
-        .fail(function(xhr) {
-            showNotification('Failed to send products', 'error');
-            console.error('Send products error:', xhr.responseJSON);
-        })
-        .always(function() {
-            $('#sendSelectedProducts').prop('disabled', false).text('Send Selected Products');
-        });
-    }
-    
     // Reset modal when closed
     $('#productModal').on('hidden.bs.modal', function() {
         selectedProducts = [];
@@ -2028,19 +2544,36 @@ $(document).ready(function() {
         updateProductSelection();
     });
     
+    // Order modal event handlers
+    $('#createOrderModal').on('shown.bs.modal', function() {
+        if ($('#productRows').children().length === 0) {
+            addProductRow();
+        }
+    });
     
-    // Debounce function for search
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
+    // Handle customer selection in order modal
+    $('#customer_id').change(function() {
+        const selectedOption = $(this).find(':selected');
+        if (selectedOption.val()) {
+            $('#customer_name').val(selectedOption.data('name'));
+            $('#customer_phone').val(selectedOption.data('phone'));
+            $('#customer_email').val(selectedOption.data('email'));
+            $('#customer_address').val(selectedOption.data('address'));
+        }
+    });
+    
+    // Calculate totals when values change in order modal
+    $(document).on('input', '#shipping_charge, #advance_payment, #order_discount', calculateOrderTotal);
+    $('#discount_type').change(calculateOrderTotal);
+    
+    // Reset order modal when closed
+    $('#createOrderModal').on('hidden.bs.modal', function() {
+        $('#createOrderForm')[0].reset();
+        $('#productRows').empty();
+        productRowCounter = 0;
+        $('#orderSubtotal, #shippingAmount, #totalAmount').text('৳0.00');
+        $('#orderDiscountRow, #advancePaymentRow, #remainingRow').hide();
+    });
 });
 </script>
 
@@ -2050,9 +2583,7 @@ $(document).ready(function() {
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="productModalTitle">Select Products (Max 3)</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <!-- Loading State -->
@@ -2087,10 +2618,247 @@ $(document).ready(function() {
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="sendSelectedProducts" onclick="sendSelectedProducts()" disabled>
                     Send Selected Products
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Order Modal -->
+<div class="modal fade" id="createOrderModal" tabindex="-1" role="dialog" aria-labelledby="createOrderModalLabel">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="max-height: 95vh;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; position: sticky; top: 0; z-index: 1050;">
+                <h5 class="modal-title" id="createOrderModalLabel" style="font-weight: 600;">
+                    <i class="fas fa-plus-circle me-2"></i>Create New Order
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="max-height: calc(95vh - 120px); overflow-y: auto; padding: 25px;">
+                <form id="createOrderForm">
+                    @csrf
+                    
+                    <!-- Products Section - MOVED TO TOP -->
+                    <div class="row mt-0 mb-4">
+                        <div class="col-12">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-header" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0" style="font-weight: 600;">
+                                            <i class="fas fa-boxes me-2"></i>Products <span class="text-warning">*</span>
+                                        </h6>
+                                        <button type="button" class="btn btn-light btn-sm" onclick="addProductRow()">
+                                            <i class="fas fa-plus me-1"></i> Add Product
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body" style="padding: 20px;">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover" id="productsTable">
+                                            <thead style="background: #f8f9fa;">
+                                                <tr>
+                                                    <th width="30%" style="border: none;">Product</th>
+                                                    <th width="15%" style="border: none;">Quantity</th>
+                                                    <th width="15%" style="border: none;">Unit Price</th>
+                                                    <th width="15%" style="border: none;">Discount</th>
+                                                    <th width="15%" style="border: none;">Total</th>
+                                                    <th width="10%" style="border: none;">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="productRows">
+                                                <!-- Product rows will be added here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-4">
+                        <!-- Customer Information -->
+                        <div class="col-lg-6">
+                            <div class="card shadow-sm border-0" style="background: #f8f9fa;">
+                                <div class="card-header" style="background: #e9ecef; border: none;">
+                                    <h6 class="mb-0" style="color: #495057; font-weight: 600;">
+                                        <i class="fas fa-user me-2"></i>Customer Information
+                                    </h6>
+                                </div>
+                                <div class="card-body" style="padding: 20px;">
+                                    <div class="form-group mb-3">
+                                        <label for="customer_id" class="form-label">Existing Customer</label>
+                                        <select class="form-select" id="customer_id" name="customer_id">
+                                            <option value="">Select customer or create new</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group mb-3">
+                                        <label for="customer_name" class="form-label">Customer Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="customer_name" name="customer_info[name]" required>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="customer_phone" class="form-label">Phone <span class="text-danger">*</span></label>
+                                                <input type="tel" class="form-control" id="customer_phone" name="customer_info[phone]" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="customer_email" class="form-label">Email</label>
+                                                <input type="email" class="form-control" id="customer_email" name="customer_info[email]">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group mb-0">
+                                        <label for="customer_address" class="form-label">Address <span class="text-danger">*</span></label>
+                                        <textarea class="form-control" id="customer_address" name="customer_info[address]" rows="3" required></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Payment & Order Information -->
+                        <div class="col-lg-6">
+                            <div class="card shadow-sm border-0" style="background: #f8f9fa;">
+                                <div class="card-header" style="background: #e9ecef; border: none;">
+                                    <h6 class="mb-0" style="color: #495057; font-weight: 600;">
+                                        <i class="fas fa-credit-card me-2"></i>Payment Method & Notes
+                                    </h6>
+                                </div>
+                                <div class="card-body" style="padding: 20px;">
+                                    <div class="form-group mb-3">
+                                        <label for="payment_method" class="form-label">Payment Method</label>
+                                        <select class="form-select" id="payment_method" name="payment_method">
+                                            <option value="cod" selected>Cash on Delivery</option>
+                                            <option value="online">Online Payment</option>
+                                            <option value="bank_transfer">Bank Transfer</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group mb-0">
+                                        <label for="notes" class="form-label">Notes</label>
+                                        <textarea class="form-control" id="notes" name="notes" rows="4" placeholder="Order notes, special instructions, etc..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pricing Section -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-header" style="background: linear-gradient(135deg, #ffc107 0%, #ff8c00 100%); color: white; border: none;">
+                                    <h6 class="mb-0" style="font-weight: 600;">
+                                        <i class="fas fa-calculator me-2"></i>Shipping, Discount & Advance Payment
+                                    </h6>
+                                </div>
+                                <div class="card-body" style="padding: 20px;">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="form-group mb-3">
+                                                <label for="shipping_charge" class="form-label">Shipping Charge (৳)</label>
+                                                <input type="number" class="form-control" id="shipping_charge" name="shipping_charge" min="0" step="0.01" value="60">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group mb-3">
+                                                <label for="discount_type" class="form-label">Discount Type</label>
+                                                <select class="form-select" id="discount_type" name="discount_type">
+                                                    <option value="fixed">Fixed Amount</option>
+                                                    <option value="percentage">Percentage</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group mb-3">
+                                                <label for="order_discount" class="form-label">Order Discount</label>
+                                                <input type="number" class="form-control" id="order_discount" name="discount_amount" min="0" step="0.01" value="0">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group mb-3">
+                                                <label for="advance_payment" class="form-label">Advance Payment (৳)</label>
+                                                <input type="number" class="form-control" id="advance_payment" name="advance_payment" min="0" step="0.01" value="0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Order Summary -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 1px solid #dee2e6;">
+                                <div class="card-header" style="background: #343a40; color: white; border: none;">
+                                    <h6 class="mb-0" style="font-weight: 600;">
+                                        <i class="fas fa-calculator me-2"></i>Order Summary
+                                    </h6>
+                                </div>
+                                <div class="card-body" style="padding: 20px;">
+                                    <div class="row">
+                                        <div class="col-md-6 offset-md-6">
+                                            <table class="table table-sm mb-0" style="background: white; border-radius: 8px;">
+                                                <tbody>
+                                                    <tr>
+                                                        <td style="border: none; padding: 8px 15px;"><strong>Subtotal:</strong></td>
+                                                        <td style="border: none; padding: 8px 15px;" class="text-end"><strong id="orderSubtotal">৳0.00</strong></td>
+                                                    </tr>
+                                                    <tr id="orderDiscountRow" style="display: none;">
+                                                        <td style="border: none; padding: 8px 15px;"><strong>Order Discount:</strong></td>
+                                                        <td style="border: none; padding: 8px 15px;" class="text-end"><strong id="orderDiscountAmount" class="text-danger">-৳0.00</strong></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="border: none; padding: 8px 15px;"><strong>Shipping:</strong></td>
+                                                        <td style="border: none; padding: 8px 15px;" class="text-end"><strong id="shippingAmount">৳0.00</strong></td>
+                                                    </tr>
+                                                    <tr style="background: #e3f2fd;">
+                                                        <td style="border: none; padding: 12px 15px; border-top: 2px solid #2196f3;"><strong>Total Amount:</strong></td>
+                                                        <td style="border: none; padding: 12px 15px; border-top: 2px solid #2196f3;" class="text-end"><strong id="totalAmount" class="text-primary" style="font-size: 1.1em;">৳0.00</strong></td>
+                                                    </tr>
+                                                    <tr id="advancePaymentRow" style="display: none; background: #e8f5e8;">
+                                                        <td style="border: none; padding: 8px 15px;"><strong>Advance Payment:</strong></td>
+                                                        <td style="border: none; padding: 8px 15px;" class="text-end"><strong id="advanceAmount" class="text-success">৳0.00</strong></td>
+                                                    </tr>
+                                                    <tr id="remainingRow" style="display: none; background: #fff3cd;">
+                                                        <td style="border: none; padding: 8px 15px;"><strong>Remaining Amount:</strong></td>
+                                                        <td style="border: none; padding: 8px 15px;" class="text-end"><strong id="remainingAmount" class="text-warning">৳0.00</strong></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer" style="background: #f8f9fa; border: none; padding: 20px 25px;">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <div>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            All required fields must be filled
+                        </small>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="createOrderFromChat()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                            <i class="fas fa-save me-1"></i> Create Order
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2119,6 +2887,130 @@ $(document).ready(function() {
 
 .quick-actions-row .btn:hover {
     transform: translateY(-1px);
+}
+
+/* Order Modal Styling */
+.modal-xl {
+    max-width: 95% !important;
+    width: 95% !important;
+}
+
+@media (min-width: 1200px) {
+    .modal-xl {
+        max-width: 1200px !important;
+        width: 1200px !important;
+    }
+}
+
+@media (min-width: 992px) and (max-width: 1199px) {
+    .modal-xl {
+        max-width: 90% !important;
+        width: 90% !important;
+    }
+}
+
+@media (max-width: 991px) {
+    .modal-xl {
+        max-width: 95% !important;
+        width: 95% !important;
+        margin: 10px auto !important;
+    }
+    
+    .modal-content {
+        min-height: auto !important;
+        max-height: 90vh !important;
+    }
+    
+    .modal-body {
+        max-height: calc(90vh - 120px) !important;
+    }
+}
+
+/* Form improvements for order modal */
+#createOrderModal .form-select, 
+#createOrderModal .form-control {
+    border-radius: 8px !important;
+    border: 1px solid #e0e0e0 !important;
+    padding: 10px 15px !important;
+    font-size: 14px !important;
+}
+
+#createOrderModal .form-select:focus, 
+#createOrderModal .form-control:focus {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+}
+
+#createOrderModal .form-label {
+    font-weight: 600 !important;
+    color: #495057 !important;
+    margin-bottom: 8px !important;
+}
+
+/* Product table improvements for order modal */
+#createOrderModal #productsTable input, 
+#createOrderModal #productsTable select {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+    width: 100%;
+}
+
+#createOrderModal #productsTable .table-responsive {
+    border-radius: 8px;
+}
+
+#createOrderModal #productsTable th {
+    font-weight: 600;
+    color: #495057;
+    background: #f8f9fa !important;
+    padding: 12px 8px;
+}
+
+#createOrderModal #productsTable .product-total {
+    font-weight: 600;
+    color: #28a745;
+    font-size: 14px;
+}
+
+/* Card improvements for order modal */
+#createOrderModal .card {
+    border-radius: 12px !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
+}
+
+#createOrderModal .card-header {
+    border-radius: 12px 12px 0 0 !important;
+}
+
+/* Animation improvements for order modal */
+#createOrderModal.modal.fade .modal-dialog {
+    transition: transform 0.4s ease-out, opacity 0.3s ease-out;
+    transform: scale(0.9) translateY(-50px);
+}
+
+#createOrderModal.modal.show .modal-dialog {
+    transform: scale(1) translateY(0);
+}
+
+/* Scrollbar styling for order modal */
+#createOrderModal .modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+#createOrderModal .modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+#createOrderModal .modal-body::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+#createOrderModal .modal-body::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
 }
 </style>
 @endpush

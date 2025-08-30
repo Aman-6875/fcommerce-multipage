@@ -26,6 +26,35 @@ class ProductController extends Controller
     }
 
     /**
+     * Get products as JSON for API usage (page-specific)
+     */
+    public function getProductsJson(Request $request, $pageId)
+    {
+        $client = auth('client')->user();
+        
+        // Verify the page belongs to the client
+        $facebookPage = FacebookPage::where('client_id', $client->id)
+            ->where('id', $pageId)
+            ->first();
+            
+        if (!$facebookPage) {
+            return response()->json(['error' => 'Page not found'], 404);
+        }
+        
+        $products = Product::where('client_id', $client->id)
+            ->where('facebook_page_id', $pageId)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get(['id', 'name', 'sku', 'price', 'sale_price', 'stock_quantity', 'category']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $products
+        ]);
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create()

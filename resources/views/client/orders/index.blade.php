@@ -319,185 +319,219 @@
 </div>
 
 <!-- Create Order Modal -->
-<div class="modal fade" id="createOrderModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">
+<div class="modal fade" id="createOrderModal" tabindex="-1" role="dialog" aria-labelledby="createOrderModalLabel">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="max-height: 95vh;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; position: sticky; top: 0; z-index: 1050;">
+                <h5 class="modal-title" id="createOrderModalLabel" style="font-weight: 600;">
                     <i class="fas fa-plus-circle me-2"></i>{{ __('client.create_new_order') }}
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="{{ __('common.close') }}"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <form id="createOrderForm" action="{{ route('client.orders.store') }}" method="POST">
+            <div class="modal-body" style="max-height: calc(95vh - 120px); overflow-y: auto; padding: 25px;">
+                <form id="createOrderForm">
                     @csrf
-                    <div class="row">
-                        <!-- Customer Information -->
-                        <div class="col-md-6">
-                            <h6 class="mb-3">{{ __('client.customer_information') }}</h6>
-                            
-                            <div class="form-group mb-3">
-                                <label for="facebook_page_id">{{ __('client.facebook_page') }}</label>
-                                <select class="form-control" id="facebook_page_id" name="facebook_page_id">
-                                    <option value="">{{ __('common.all_pages') }}</option>
-                                    @foreach(auth('client')->user()->facebookPages()->where('is_connected', true)->get() as $page)
-                                        <option value="{{ $page->page_id }}" data-page-name="{{ $page->page_name }}">{{ $page->page_name }}</option>
-                                    @endforeach
-                                </select>
-                                <div id="selected_page_info" class="mt-2" style="display: none;">
-                                    <div class="alert alert-info py-2">
-                                        <i class="fab fa-facebook text-primary"></i> 
-                                        <strong>{{ __('client.active_page') }}:</strong> 
-                                        <span id="selected_page_name"></span>
+                    
+                    <!-- Products Section - MOVED TO TOP -->
+                    <div class="row mt-0 mb-4">
+                        <div class="col-12">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-header" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0" style="font-weight: 600;">
+                                            <i class="fas fa-boxes me-2"></i>{{ __('client.products') }} <span class="text-warning">*</span>
+                                        </h6>
+                                        <button type="button" class="btn btn-light btn-sm" onclick="addProductRow()">
+                                            <i class="fas fa-plus me-1"></i> {{ __('client.add_product') }}
+                                        </button>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <div class="form-group mb-3">
-                                <label for="customer_search_input">{{ __('common.search_customer') }}</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="customer_search_input" 
-                                           placeholder="{{ __('common.type_name_or_phone') }}" autocomplete="off">
-                                    <button type="button" class="btn btn-outline-secondary" id="create_new_customer_btn">
-                                        <i class="fas fa-plus"></i> {{ __('common.create_new') }}
-                                    </button>
-                                </div>
-                                <div id="customer_search_results" class="dropdown-menu w-100" style="display: none; max-height: 200px; overflow-y: auto;"></div>
-                                <input type="hidden" id="customer_id" name="customer_id">
-                            </div>
-                            
-                            <div class="form-group mb-3">
-                                <label for="customer_name">{{ __('common.customer_name') }} <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="customer_name" name="customer_info[name]" required>
-                            </div>
-                            
-                            <div class="form-group mb-3">
-                                <label for="customer_phone">{{ __('common.phone') }} <span class="text-danger">*</span></label>
-                                <input type="tel" class="form-control" id="customer_phone" name="customer_info[phone]" required>
-                            </div>
-                            
-                            <div class="form-group mb-3">
-                                <label for="customer_email">{{ __('common.email') }}</label>
-                                <input type="email" class="form-control" id="customer_email" name="customer_info[email]">
-                            </div>
-                            
-                            <div class="form-group mb-3">
-                                <label for="customer_address">{{ __('common.address') }} <span class="text-danger">*</span></label>
-                                <textarea class="form-control" id="customer_address" name="customer_info[address]" rows="3" required></textarea>
-                            </div>
-                        </div>
-                        
-                        <!-- Order Information -->
-                        <div class="col-md-6">
-                            <h6 class="mb-3">{{ __('client.order_information') }}</h6>
-                            
-                            <div class="form-group mb-3">
-                                <label for="payment_method">{{ __('client.payment_method') }}</label>
-                                <select class="form-control" id="payment_method" name="payment_method">
-                                    <option value="cod" selected>{{ __('client.cash_on_delivery') }}</option>
-                                    <option value="online">{{ __('client.online_payment') }}</option>
-                                    <option value="bank_transfer">{{ __('client.bank_transfer') }}</option>
-                                </select>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-6">
-                                    <div class="form-group mb-3">
-                                        <label for="shipping_charge">{{ __('client.shipping_charge') }} (৳)</label>
-                                        <input type="number" class="form-control" id="shipping_charge" name="shipping_charge" min="0" step="0.01" value="0">
+                                <div class="card-body" style="padding: 20px;">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover" id="productsTable">
+                                            <thead style="background: #f8f9fa;">
+                                                <tr>
+                                                    <th width="30%" style="border: none;">{{ __('client.product') }}</th>
+                                                    <th width="15%" style="border: none;">{{ __('common.quantity') }}</th>
+                                                    <th width="15%" style="border: none;">{{ __('client.unit_price') }}</th>
+                                                    <th width="15%" style="border: none;">{{ __('client.discount') }}</th>
+                                                    <th width="15%" style="border: none;">{{ __('common.total') }}</th>
+                                                    <th width="10%" style="border: none;">{{ __('common.actions') }}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="productRows">
+                                                <!-- Product rows will be added here -->
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
-                                <div class="col-6">
-                                    <div class="form-group mb-3">
-                                        <label for="advance_payment">{{ __('client.advance_payment') }} (৳)</label>
-                                        <input type="number" class="form-control" id="advance_payment" name="advance_payment" min="0" step="0.01" value="0">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-6">
-                                    <div class="form-group mb-3">
-                                        <label for="discount_type">{{ __('client.discount_type') }}</label>
-                                        <select class="form-control" id="discount_type" name="discount_type">
-                                            <option value="fixed">{{ __('client.fixed_amount') }}</option>
-                                            <option value="percentage">{{ __('client.percentage') }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="form-group mb-3">
-                                        <label for="order_discount">{{ __('client.order_discount') }}</label>
-                                        <input type="number" class="form-control" id="order_discount" name="discount_amount" min="0" step="0.01" value="0">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group mb-3">
-                                <label for="notes">{{ __('common.notes') }}</label>
-                                <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="{{ __('client.order_notes_placeholder') }}"></textarea>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Products Section -->
+                    <div class="row g-4">
+                        <!-- Customer Information -->
+                        <div class="col-lg-6">
+                            <div class="card shadow-sm border-0" style="background: #f8f9fa;">
+                                <div class="card-header" style="background: #e9ecef; border: none;">
+                                    <h6 class="mb-0" style="color: #495057; font-weight: 600;">
+                                        <i class="fas fa-user me-2"></i>{{ __('client.customer_information') }}
+                                    </h6>
+                                </div>
+                                <div class="card-body" style="padding: 20px;">
+                                    <div class="form-group mb-3">
+                                        <label for="customer_id" class="form-label">{{ __('common.existing_customer') }}</label>
+                                        <select class="form-select" id="customer_id" name="customer_id">
+                                            <option value="">{{ __('common.select_customer_or_create_new') }}</option>
+                                            @foreach(auth('client')->user()->customers as $customer)
+                                                <option value="{{ $customer->id }}" 
+                                                        data-name="{{ $customer->name }}" 
+                                                        data-phone="{{ $customer->phone }}" 
+                                                        data-email="{{ $customer->email }}">
+                                                    {{ $customer->name }} - {{ $customer->phone }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group mb-3">
+                                        <label for="customer_name" class="form-label">{{ __('common.customer_name') }} <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="customer_name" name="customer_info[name]" required>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="customer_phone" class="form-label">{{ __('common.phone') }} <span class="text-danger">*</span></label>
+                                                <input type="tel" class="form-control" id="customer_phone" name="customer_info[phone]" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="customer_email" class="form-label">{{ __('common.email') }}</label>
+                                                <input type="email" class="form-control" id="customer_email" name="customer_info[email]">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group mb-0">
+                                        <label for="customer_address" class="form-label">{{ __('common.address') }} <span class="text-danger">*</span></label>
+                                        <textarea class="form-control" id="customer_address" name="customer_info[address]" rows="3" required></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Payment & Order Information -->
+                        <div class="col-lg-6">
+                            <div class="card shadow-sm border-0" style="background: #f8f9fa;">
+                                <div class="card-header" style="background: #e9ecef; border: none;">
+                                    <h6 class="mb-0" style="color: #495057; font-weight: 600;">
+                                        <i class="fas fa-credit-card me-2"></i>{{ __('client.payment_method') }} & {{ __('common.notes') }}
+                                    </h6>
+                                </div>
+                                <div class="card-body" style="padding: 20px;">
+                                    <div class="form-group mb-3">
+                                        <label for="payment_method" class="form-label">{{ __('client.payment_method') }}</label>
+                                        <select class="form-select" id="payment_method" name="payment_method">
+                                            <option value="cod" selected>{{ __('client.cash_on_delivery') }}</option>
+                                            <option value="online">{{ __('client.online_payment') }}</option>
+                                            <option value="bank_transfer">{{ __('client.bank_transfer') }}</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group mb-0">
+                                        <label for="notes" class="form-label">{{ __('common.notes') }}</label>
+                                        <textarea class="form-control" id="notes" name="notes" rows="4" placeholder="{{ __('client.order_notes_placeholder') }}"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pricing Section -->
                     <div class="row mt-4">
                         <div class="col-12">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6>{{ __('client.products') }}</h6>
-                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addProductRow()">
-                                    <i class="fas fa-plus"></i> {{ __('client.add_product') }}
-                                </button>
+                            <div class="card shadow-sm border-0">
+                                <div class="card-header" style="background: linear-gradient(135deg, #ffc107 0%, #ff8c00 100%); color: white; border: none;">
+                                    <h6 class="mb-0" style="font-weight: 600;">
+                                        <i class="fas fa-calculator me-2"></i>{{ __('client.shipping_charge') }}, {{ __('client.discount') }} & {{ __('client.advance_payment') }}
+                                    </h6>
+                                </div>
+                                <div class="card-body" style="padding: 20px;">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="form-group mb-3">
+                                                <label for="shipping_charge" class="form-label">{{ __('client.shipping_charge') }} (৳)</label>
+                                                <input type="number" class="form-control" id="shipping_charge" name="shipping_charge" min="0" step="0.01" value="0">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group mb-3">
+                                                <label for="discount_type" class="form-label">{{ __('client.discount_type') }}</label>
+                                                <select class="form-select" id="discount_type" name="discount_type">
+                                                    <option value="fixed">{{ __('client.fixed_amount') }}</option>
+                                                    <option value="percentage">{{ __('client.percentage') }}</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group mb-3">
+                                                <label for="order_discount" class="form-label">{{ __('client.order_discount') }}</label>
+                                                <input type="number" class="form-control" id="order_discount" name="discount_amount" min="0" step="0.01" value="0">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group mb-3">
+                                                <label for="advance_payment" class="form-label">{{ __('client.advance_payment') }} (৳)</label>
+                                                <input type="number" class="form-control" id="advance_payment" name="advance_payment" min="0" step="0.01" value="0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            
-                            <div class="table-responsive">
-                                <table class="table table-bordered" id="productsTable">
-                                    <thead>
-                                        <tr>
-                                            <th width="30%">{{ __('client.product') }}</th>
-                                            <th width="15%">{{ __('common.quantity') }}</th>
-                                            <th width="15%">{{ __('client.unit_price') }}</th>
-                                            <th width="15%">{{ __('client.discount') }}</th>
-                                            <th width="15%">{{ __('common.total') }}</th>
-                                            <th width="10%">{{ __('common.actions') }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="productRows">
-                                        <!-- Product rows will be added here -->
-                                    </tbody>
-                                </table>
-                            </div>
-                            
-                            <!-- Order Summary -->
-                            <div class="card mt-3">
-                                <div class="card-body">
+                        </div>
+                    </div>
+                    
+                    <!-- Order Summary -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 1px solid #dee2e6;">
+                                <div class="card-header" style="background: #343a40; color: white; border: none;">
+                                    <h6 class="mb-0" style="font-weight: 600;">
+                                        <i class="fas fa-calculator me-2"></i>{{ __('client.order_summary') }}
+                                    </h6>
+                                </div>
+                                <div class="card-body" style="padding: 20px;">
                                     <div class="row">
                                         <div class="col-md-6 offset-md-6">
-                                            <table class="table table-sm">
-                                                <tr>
-                                                    <td><strong>{{ __('client.subtotal') }}:</strong></td>
-                                                    <td class="text-end"><strong id="orderSubtotal">৳0.00</strong></td>
-                                                </tr>
-                                                <tr id="orderDiscountRow" style="display: none;">
-                                                    <td><strong>{{ __('client.order_discount') }}:</strong></td>
-                                                    <td class="text-end"><strong id="orderDiscountAmount">-৳0.00</strong></td>
-                                                </tr>
-                                                <tr>
-                                                    <td><strong>{{ __('client.shipping') }}:</strong></td>
-                                                    <td class="text-end"><strong id="shippingAmount">৳0.00</strong></td>
-                                                </tr>
-                                                <tr>
-                                                    <td><strong>{{ __('client.total_amount') }}:</strong></td>
-                                                    <td class="text-end"><strong id="totalAmount" class="text-primary">৳0.00</strong></td>
-                                                </tr>
-                                                <tr id="advancePaymentRow" style="display: none;">
-                                                    <td><strong>{{ __('client.advance_payment') }}:</strong></td>
-                                                    <td class="text-end"><strong id="advanceAmount">৳0.00</strong></td>
-                                                </tr>
-                                                <tr id="remainingRow" style="display: none;">
-                                                    <td><strong>{{ __('client.remaining_amount') }}:</strong></td>
-                                                    <td class="text-end"><strong id="remainingAmount" class="text-warning">৳0.00</strong></td>
-                                                </tr>
+                                            <table class="table table-sm mb-0" style="background: white; border-radius: 8px;">
+                                                <tbody>
+                                                    <tr>
+                                                        <td style="border: none; padding: 8px 15px;"><strong>{{ __('client.subtotal') }}:</strong></td>
+                                                        <td style="border: none; padding: 8px 15px;" class="text-end"><strong id="orderSubtotal">৳0.00</strong></td>
+                                                    </tr>
+                                                    <tr id="orderDiscountRow" style="display: none;">
+                                                        <td style="border: none; padding: 8px 15px;"><strong>{{ __('client.order_discount') }}:</strong></td>
+                                                        <td style="border: none; padding: 8px 15px;" class="text-end"><strong id="orderDiscountAmount" class="text-danger">-৳0.00</strong></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="border: none; padding: 8px 15px;"><strong>{{ __('client.shipping') }}:</strong></td>
+                                                        <td style="border: none; padding: 8px 15px;" class="text-end"><strong id="shippingAmount">৳0.00</strong></td>
+                                                    </tr>
+                                                    <tr style="background: #e3f2fd;">
+                                                        <td style="border: none; padding: 12px 15px; border-top: 2px solid #2196f3;"><strong>{{ __('client.total_amount') }}:</strong></td>
+                                                        <td style="border: none; padding: 12px 15px; border-top: 2px solid #2196f3;" class="text-end"><strong id="totalAmount" class="text-primary" style="font-size: 1.1em;">৳0.00</strong></td>
+                                                    </tr>
+                                                    <tr id="advancePaymentRow" style="display: none; background: #e8f5e8;">
+                                                        <td style="border: none; padding: 8px 15px;"><strong>{{ __('client.advance_payment') }}:</strong></td>
+                                                        <td style="border: none; padding: 8px 15px;" class="text-end"><strong id="advanceAmount" class="text-success">৳0.00</strong></td>
+                                                    </tr>
+                                                    <tr id="remainingRow" style="display: none; background: #fff3cd;">
+                                                        <td style="border: none; padding: 8px 15px;"><strong>{{ __('client.remaining_amount') }}:</strong></td>
+                                                        <td style="border: none; padding: 8px 15px;" class="text-end"><strong id="remainingAmount" class="text-warning">৳0.00</strong></td>
+                                                    </tr>
+                                                </tbody>
                                             </table>
                                         </div>
                                     </div>
@@ -507,11 +541,23 @@
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('common.cancel') }}</button>
-                <button type="button" class="btn btn-primary" onclick="createOrder()">
-                    <i class="fas fa-save"></i> {{ __('client.create_order') }}
-                </button>
+            <div class="modal-footer" style="background: #f8f9fa; border: none; padding: 20px 25px;">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <div>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            {{ __('client.all_required_fields_must_be_filled') }}
+                        </small>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>{{ __('common.cancel') }}
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="createOrder()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                            <i class="fas fa-save me-1"></i> {{ __('client.create_order') }}
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -521,11 +567,9 @@
 <div class="modal fade" id="editOrderModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-edit me-2"></i>{{ __('client.edit_order') }}
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="{{ __('common.close') }}"></button>
+            <div class="modal-header">
+                <h5 class="modal-title">{{ __('client.edit_order') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="editOrderForm">
@@ -553,6 +597,131 @@
 
 @endsection
 
+@push('styles')
+<style>
+/* Enhanced modal styling */
+.modal-xl {
+    max-width: 95% !important;
+    width: 95% !important;
+}
+
+@media (min-width: 1200px) {
+    .modal-xl {
+        max-width: 1200px !important;
+        width: 1200px !important;
+    }
+}
+
+@media (min-width: 992px) and (max-width: 1199px) {
+    .modal-xl {
+        max-width: 90% !important;
+        width: 90% !important;
+    }
+}
+
+@media (max-width: 991px) {
+    .modal-xl {
+        max-width: 95% !important;
+        width: 95% !important;
+        margin: 10px auto !important;
+    }
+    
+    .modal-content {
+        min-height: auto !important;
+        max-height: 90vh !important;
+    }
+    
+    .modal-body {
+        max-height: calc(90vh - 120px) !important;
+    }
+}
+
+/* Form improvements */
+.form-select, .form-control {
+    border-radius: 8px !important;
+    border: 1px solid #e0e0e0 !important;
+    padding: 10px 15px !important;
+    font-size: 14px !important;
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+}
+
+.form-label {
+    font-weight: 600 !important;
+    color: #495057 !important;
+    margin-bottom: 8px !important;
+}
+
+/* Product table improvements */
+#productsTable input, #productsTable select {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+    width: 100%;
+}
+
+#productsTable .table-responsive {
+    border-radius: 8px;
+}
+
+#productsTable th {
+    font-weight: 600;
+    color: #495057;
+    background: #f8f9fa !important;
+    padding: 12px 8px;
+}
+
+#productsTable .product-total {
+    font-weight: 600;
+    color: #28a745;
+    font-size: 14px;
+}
+
+/* Card improvements */
+.card {
+    border-radius: 12px !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+}
+
+/* Animation improvements */
+.modal.fade .modal-dialog {
+    transition: transform 0.4s ease-out, opacity 0.3s ease-out;
+    transform: scale(0.9) translateY(-50px);
+}
+
+.modal.show .modal-dialog {
+    transform: scale(1) translateY(0);
+}
+
+/* Scrollbar styling */
+.modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+</style>
+@endpush
+
 @push('scripts')
 <script>
 // Order management JavaScript
@@ -566,60 +735,13 @@ $(document).ready(function() {
         }
     });
     
-    // Customer search functionality
-    let searchTimeout;
-    $('#customer_search_input').on('input', function() {
-        clearTimeout(searchTimeout);
-        const term = $(this).val().trim();
-        
-        if (term.length < 2) {
-            $('#customer_search_results').hide();
-            return;
-        }
-        
-        searchTimeout = setTimeout(() => {
-            searchCustomers(term);
-        }, 300);
-    });
-    
-    // Handle Facebook page change
-    $('#facebook_page_id').change(function() {
+    // Handle customer selection
+    $('#customer_id').change(function() {
         const selectedOption = $(this).find(':selected');
-        const pageName = selectedOption.data('page-name');
-        
-        if (pageName) {
-            $('#selected_page_name').text(pageName);
-            $('#selected_page_info').show();
-        } else {
-            $('#selected_page_info').hide();
-        }
-        
-        $('#customer_search_input').val('');
-        $('#customer_id').val('');
-        clearCustomerForm();
-        $('#customer_search_results').hide();
-        
-        // Update placeholder text based on page selection
-        if (pageName) {
-            $('#customer_search_input').attr('placeholder', `{{ __('common.search_customers_from') }} ${pageName}`);
-        } else {
-            $('#customer_search_input').attr('placeholder', '{{ __('common.type_name_or_phone') }}');
-        }
-    });
-    
-    // Create new customer button
-    $('#create_new_customer_btn').click(function() {
-        $('#customer_id').val('');
-        $('#customer_search_input').val('');
-        clearCustomerForm();
-        $('#customer_search_results').hide();
-        $('#customer_name').focus();
-    });
-    
-    // Hide search results when clicking outside
-    $(document).click(function(e) {
-        if (!$(e.target).closest('#customer_search_input, #customer_search_results').length) {
-            $('#customer_search_results').hide();
+        if (selectedOption.val()) {
+            $('#customer_name').val(selectedOption.data('name'));
+            $('#customer_phone').val(selectedOption.data('phone'));
+            $('#customer_email').val(selectedOption.data('email'));
         }
     });
     
@@ -785,16 +907,7 @@ function createOrder() {
         },
         success: function(response) {
             $('#createOrderModal').modal('hide');
-            if (response.success) {
-                alert(response.message || 'Order created successfully!');
-                if (response.redirect_url) {
-                    window.location.href = response.redirect_url;
-                } else {
-                    location.reload();
-                }
-            } else {
-                alert('Error: ' + (response.message || 'Unknown error occurred'));
-            }
+            location.reload();
         },
         error: function(xhr) {
             if (xhr.status === 422) {
@@ -846,105 +959,6 @@ function exportOrders() {
     });
     
     window.open('/client/orders/export/excel?' + params.toString(), '_blank');
-}
-
-function searchCustomers(term) {
-    const pageId = $('#facebook_page_id').val();
-    
-    $.ajax({
-        url: '{{ route("client.orders.search-customers") }}',
-        method: 'GET',
-        data: {
-            term: term,
-            page_id: pageId
-        },
-        success: function(response) {
-            if (response.success && response.data.length > 0) {
-                showCustomerResults(response.data);
-            } else {
-                showNoCustomerFound(term);
-            }
-        },
-        error: function(xhr) {
-            console.error('Customer search error:', xhr.responseText);
-            $('#customer_search_results').hide();
-        }
-    });
-}
-
-function showCustomerResults(customers) {
-    let html = '';
-    const selectedPageId = $('#facebook_page_id').val();
-    const selectedPageName = $('#facebook_page_id option:selected').data('page-name');
-    
-    customers.forEach(customer => {
-        html += `
-            <div class="dropdown-item customer-result" data-customer='${JSON.stringify(customer)}' style="cursor: pointer; border-bottom: 1px solid #eee;">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>${customer.name}</strong>
-                        <br><small class="text-muted">${customer.phone}</small>
-                        ${customer.email ? `<br><small class="text-muted">${customer.email}</small>` : ''}
-                    </div>
-                    <div class="text-end">
-                        ${customer.page_name ? `<span class="badge bg-primary">${customer.page_name}</span>` : '<span class="badge bg-secondary">No Page</span>'}
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    $('#customer_search_results').html(html).show();
-    
-    // Handle customer selection
-    $('.customer-result').click(function() {
-        const customer = JSON.parse($(this).attr('data-customer'));
-        selectCustomer(customer);
-    });
-}
-
-function showNoCustomerFound(term) {
-    const html = `
-        <div class="dropdown-item" style="cursor: pointer;" onclick="createNewCustomerFromSearch('${term}')">
-            <div class="text-center text-muted">
-                <i class="fas fa-user-plus"></i> Create new customer: "${term}"
-            </div>
-        </div>
-    `;
-    $('#customer_search_results').html(html).show();
-}
-
-function selectCustomer(customer) {
-    $('#customer_id').val(customer.id);
-    $('#customer_search_input').val(customer.display_name);
-    $('#customer_name').val(customer.name);
-    $('#customer_phone').val(customer.phone);
-    $('#customer_email').val(customer.email || '');
-    $('#customer_address').val(customer.address || '');
-    $('#customer_search_results').hide();
-}
-
-function createNewCustomerFromSearch(term) {
-    $('#customer_id').val('');
-    $('#customer_search_input').val('');
-    $('#customer_search_results').hide();
-    
-    // Try to detect if term is phone number or name
-    const isPhone = /^[\d\s\-\+\(\)]+$/.test(term.trim());
-    if (isPhone) {
-        $('#customer_phone').val(term.trim());
-        $('#customer_name').focus();
-    } else {
-        $('#customer_name').val(term.trim());
-        $('#customer_phone').focus();
-    }
-}
-
-function clearCustomerForm() {
-    $('#customer_name').val('');
-    $('#customer_phone').val('');
-    $('#customer_email').val('');
-    $('#customer_address').val('');
 }
 
 function editOrder(orderId) {

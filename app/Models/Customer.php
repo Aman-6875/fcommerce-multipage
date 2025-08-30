@@ -74,6 +74,32 @@ class Customer extends Model
         return $this->hasOne(ConversationState::class)->where('status', 'active')->latest('last_activity_at');
     }
 
+    /**
+     * Get all page relationships for this customer
+     */
+    public function pageCustomers()
+    {
+        return $this->hasMany(PageCustomer::class);
+    }
+
+    /**
+     * Get all Facebook pages this customer has interacted with
+     */
+    public function facebookPages()
+    {
+        return $this->belongsToMany(FacebookPage::class, 'page_customers')
+                    ->withPivot(['facebook_user_id', 'first_interaction', 'last_interaction', 'interaction_count', 'status'])
+                    ->withTimestamps();
+    }
+
+    /**
+     * Get page customer relationship for specific page
+     */
+    public function getPageCustomer(FacebookPage $facebookPage): ?PageCustomer
+    {
+        return $this->pageCustomers()->where('facebook_page_id', $facebookPage->id)->first();
+    }
+
     // Helper method to get customer's language preference
     public function getLanguage(): string
     {

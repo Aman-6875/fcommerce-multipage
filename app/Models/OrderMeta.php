@@ -16,12 +16,14 @@ class OrderMeta extends Model
         'product_sku',
         'quantity',
         'unit_price',
+        'discount_amount',
         'total_price',
         'product_snapshot'
     ];
 
     protected $casts = [
         'unit_price' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
         'total_price' => 'decimal:2',
         'product_snapshot' => 'array'
     ];

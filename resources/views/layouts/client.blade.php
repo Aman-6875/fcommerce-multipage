@@ -77,7 +77,7 @@
         .modal-dialog {
             z-index: 999999999 !important;
             position: relative !important;
-            margin: 30px auto !important;
+            margin: 50px auto 30px auto !important;
             pointer-events: auto !important;
             background-color: transparent !important;
             width: 90vw !important;
@@ -97,7 +97,7 @@
             .modal-dialog {
                 width: 80vw !important;
                 max-width: 600px !important;
-                margin: 1.75rem auto !important;
+                margin: 60px auto 1.75rem auto !important;
             }
             
             .modal-dialog.modal-lg,
@@ -391,6 +391,65 @@
         .modal a {
             pointer-events: auto !important;
         }
+        
+        /* Reduce topbar height to prevent modal title hiding */
+        .header_iner {
+            padding: 5px 15px !important;
+            min-height: 40px !important;
+            height: 40px !important;
+        }
+        
+        .plan_status .alert {
+            padding: 4px 8px !important;
+            margin-bottom: 0 !important;
+            font-size: 12px !important;
+        }
+        
+        .language_switcher .btn {
+            padding: 4px 8px !important;
+            font-size: 12px !important;
+        }
+        
+        .header_notification_warp .bell_notification_clicker {
+            padding: 8px !important;
+        }
+        
+        .profile_info img {
+            width: 35px !important;
+            height: 35px !important;
+        }
+        
+        .profile_info_iner {
+            margin-left: 8px !important;
+        }
+        
+        .profile_author_name h5 {
+            font-size: 14px !important;
+            margin-bottom: 0 !important;
+        }
+        
+        .profile_author_name p {
+            font-size: 11px !important;
+            margin-bottom: 0 !important;
+        }
+        
+        /* Additional modal positioning fixes */
+        .modal.show {
+            padding-top: 60px !important;
+        }
+        
+        .modal-dialog.modal-xl {
+            margin: 60px auto 30px auto !important;
+        }
+        
+        @media (max-width: 575px) {
+            .modal.show {
+                padding-top: 50px !important;
+            }
+            .modal-dialog {
+                margin: 50px 10px 30px 10px !important;
+            }
+        }
     </style>
     
     @stack('styles')
@@ -481,8 +540,8 @@
             </a>
         </li>
 
-        <li class="{{ request()->routeIs('client.orders') ? 'mm-active' : '' }}">
-            <a href="{{ route('client.orders') }}" aria-expanded="false">
+        <li class="{{ request()->routeIs('client.orders*') ? 'mm-active' : '' }}">
+            <a href="{{ route('client.orders.index') }}" aria-expanded="false">
                 <div class="icon_menu">
                     <img src="{{ asset('img/menu-icon/6.svg') }}" alt="">
                 </div>
@@ -536,8 +595,23 @@
                         <i class="ti-menu"></i>
                     </div>
                     
-                    <!-- Plan Status -->
+                    <!-- Plan Status & Active Page Info -->
                     <div class="plan_status d-flex align-items-center">
+                        @php
+                            $connectedPages = auth('client')->user()->facebookPages()->where('is_connected', true)->get();
+                            $pageCount = $connectedPages->count();
+                        @endphp
+                        
+                        @if($pageCount > 0)
+                            <div class="alert alert-info alert-sm me-2">
+                                <i class="fab fa-facebook text-primary"></i>
+                                <strong>{{ $pageCount }}</strong> {{ __('client.connected_pages') }}
+                                @if($pageCount === 1)
+                                    <br><small>{{ $connectedPages->first()->page_name }}</small>
+                                @endif
+                            </div>
+                        @endif
+                        
                         @if(auth('client')->user()->isFree())
                             @php
                                 $trialDaysLeft = max(0, 10 - auth('client')->user()->created_at->diffInDays(now()));

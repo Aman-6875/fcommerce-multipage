@@ -80,11 +80,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', App\Http\Middleware\S
             return redirect()->back();
         })->name('language');
 
-        // Order Management Routes (to be implemented)
-        Route::prefix('orders')->name('orders.')->group(function () {
-            Route::get('/', function() { return view('admin.orders.index'); })->name('index');
-            Route::get('/pending', function() { return view('admin.orders.pending'); })->name('pending');
-        });
+        // Note: Orders are managed by clients, not admin
 
         // Service Management Routes (to be implemented)
         Route::prefix('services')->name('services.')->group(function () {
@@ -164,6 +160,9 @@ Route::prefix('client')->name('client.')->middleware(['web', App\Http\Middleware
         Route::get('/products/modal/{pageId}', [\App\Http\Controllers\Client\ProductController::class, 'getModalProducts'])->name('products.modal');
         Route::post('/messages/{customer}/send-products', [\App\Http\Controllers\Client\MessagesController::class, 'sendProductCarousel'])->name('messages.send-products');
         
+        // Products API for order creation (page-specific)
+        Route::get('/api/products/{pageId}', [\App\Http\Controllers\Client\ProductController::class, 'getProductsJson'])->name('api.products');
+        
         // Workflow Management routes
         Route::prefix('workflows')->name('workflows.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Client\WorkflowController::class, 'index'])->name('index');
@@ -183,10 +182,24 @@ Route::prefix('client')->name('client.')->middleware(['web', App\Http\Middleware
             Route::get('/{workflow}/analytics', [\App\Http\Controllers\Client\WorkflowController::class, 'analytics'])->name('analytics');
         });
         
-        Route::get('/orders', function() { 
-            $orders = auth('client')->user()->orders()->latest()->get() ?? collect();
-            return view('client.orders', compact('orders')); 
-        })->name('orders');
+        // Orders Management routes
+        Route::prefix('orders')->name('orders.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Client\OrderController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Client\OrderController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Client\OrderController::class, 'store'])->name('store');
+            Route::get('/{order}', [\App\Http\Controllers\Client\OrderController::class, 'show'])->name('show');
+            Route::get('/{order}/edit', [\App\Http\Controllers\Client\OrderController::class, 'edit'])->name('edit');
+            Route::put('/{order}', [\App\Http\Controllers\Client\OrderController::class, 'update'])->name('update');
+            Route::delete('/{order}', [\App\Http\Controllers\Client\OrderController::class, 'destroy'])->name('destroy');
+            Route::patch('/{order}/status', [\App\Http\Controllers\Client\OrderController::class, 'updateStatus'])->name('update-status');
+            Route::get('/{order}/invoice', [\App\Http\Controllers\Client\OrderController::class, 'printInvoice'])->name('invoice');
+            Route::post('/{order}/send-invoice', [\App\Http\Controllers\Client\OrderController::class, 'sendInvoiceToCustomer'])->name('send-invoice');
+            Route::get('/export/excel', [\App\Http\Controllers\Client\OrderController::class, 'exportOrders'])->name('export');
+            Route::get('/search-customers', [\App\Http\Controllers\Client\OrderController::class, 'searchCustomers'])->name('search-customers');
+            Route::post('/update-customers-from-orders', [\App\Http\Controllers\Client\OrderController::class, 'updateCustomersFromOrders'])->name('update-customers-from-orders');
+            Route::post('/update-customers-from-facebook', [\App\Http\Controllers\Client\OrderController::class, 'updateCustomersFromFacebook'])->name('update-customers-from-facebook');
+            Route::post('/update-all-customer-data', [\App\Http\Controllers\Client\OrderController::class, 'updateAllCustomerData'])->name('update-all-customer-data');
+        });
         
         Route::get('/services', function() { 
             $services = auth('client')->user()->services()->latest()->get() ?? collect();

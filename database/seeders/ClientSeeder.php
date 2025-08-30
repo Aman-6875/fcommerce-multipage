@@ -59,7 +59,7 @@ class ClientSeeder extends Seeder
 
         // Create sample Facebook pages
         $facebookPage = \App\Models\FacebookPage::firstOrCreate(
-            ['page_id' => '107247171625408'],
+            ['page_id' => '107247171615478808'],
             [
                 'client_id' => $freeClient->id,
                 'page_name' => 'Ahmed Electronics',
