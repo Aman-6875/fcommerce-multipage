@@ -40,6 +40,7 @@
             margin-bottom: {{ $format === 'thermal' ? '15px' : '30px' }};
             border-bottom: 2px solid var(--primary-color);
             padding-bottom: {{ $format === 'thermal' ? '10px' : '20px' }};
+            flex-wrap: wrap;
         }
 
         .business-info {
@@ -197,13 +198,389 @@
         .status-delivered { background: #d4edda; color: #155724; }
         .status-cancelled { background: #f8d7da; color: #721c24; }
 
-        @media print {
-            body { print-color-adjust: exact; }
-            .invoice-container { 
-                max-width: none; 
-                margin: 0; 
-                padding: {{ $format === 'thermal' ? '2mm' : '10mm' }}; 
+        /* Mobile Responsive Styles */
+        @media screen and (max-width: 768px) {
+            .invoice-container {
+                max-width: 100%;
+                padding: 8px;
+                font-size: 12px;
             }
+            
+            .invoice-header {
+                flex-direction: column;
+                text-align: center;
+                margin-bottom: 12px;
+                padding-bottom: 10px;
+            }
+            
+            .business-info {
+                margin-bottom: 10px;
+            }
+            
+            .invoice-title {
+                text-align: center;
+                font-size: 20px;
+            }
+            
+            .invoice-meta {
+                flex-direction: column;
+                gap: 10px;
+                margin-bottom: 12px;
+            }
+            
+            .bill-to, .invoice-details {
+                width: 100%;
+                margin: 0;
+            }
+            
+            .section-title {
+                font-size: 11px;
+                margin-bottom: 5px;
+            }
+            
+            .customer-info, .order-info {
+                font-size: 10px;
+                line-height: 1.3;
+            }
+            
+            .items-table {
+                font-size: 10px;
+                margin-bottom: 12px;
+            }
+            
+            .items-table th, .items-table td {
+                padding: 4px 2px;
+                font-size: 9px;
+                line-height: 1.2;
+            }
+            
+            /* Hide discount column on tablets too */
+            .items-table th:nth-child(4), 
+            .items-table td:nth-child(4) { 
+                display: none; 
+            }
+            
+            .total-section {
+                width: 100%;
+                margin-top: 10px;
+            }
+            
+            .total-table td {
+                padding: 3px 5px;
+                font-size: 10px;
+            }
+            
+            .business-name {
+                font-size: 18px;
+                margin-bottom: 4px;
+            }
+            
+            .business-details {
+                font-size: 10px;
+                line-height: 1.2;
+            }
+            
+            .payment-info {
+                margin-top: 10px;
+                padding: 8px;
+                font-size: 9px;
+            }
+            
+            .notes {
+                margin-top: 10px;
+                padding: 8px;
+                font-size: 9px;
+            }
+            
+            .footer {
+                margin-top: 10px;
+                font-size: 8px;
+                padding-top: 8px;
+            }
+        }
+        
+        @media screen and (max-width: 480px) {
+            .invoice-container {
+                padding: 5px;
+                font-size: 11px;
+            }
+            
+            .invoice-header {
+                margin-bottom: 10px;
+                padding-bottom: 8px;
+            }
+            
+            .business-name {
+                font-size: 16px;
+                margin-bottom: 3px;
+            }
+            
+            .business-details {
+                font-size: 9px;
+                line-height: 1.2;
+            }
+            
+            .invoice-title {
+                font-size: 18px;
+                margin-top: 8px;
+            }
+            
+            .invoice-meta {
+                margin-bottom: 10px;
+                gap: 8px;
+            }
+            
+            .section-title {
+                font-size: 10px;
+                margin-bottom: 4px;
+            }
+            
+            .customer-info, .order-info {
+                font-size: 9px;
+                line-height: 1.3;
+            }
+            
+            /* Compact table layout for mobile */
+            .items-table {
+                font-size: 9px;
+                margin-bottom: 10px;
+            }
+            
+            .items-table th, .items-table td {
+                padding: 3px 2px;
+                font-size: 8px;
+                line-height: 1.2;
+            }
+            
+            .items-table th {
+                font-size: 8px;
+            }
+            
+            /* Hide discount column on very small screens */
+            .items-table th:nth-child(4), 
+            .items-table td:nth-child(4) { 
+                display: none; 
+            }
+            
+            /* Make product names more compact */
+            .items-table td:first-child strong {
+                font-size: 8px;
+                display: block;
+                margin-bottom: 1px;
+            }
+            
+            .items-table td:first-child small {
+                font-size: 7px;
+                line-height: 1.1;
+            }
+            
+            .total-section {
+                width: 100%;
+                margin-top: 8px;
+            }
+            
+            .total-table td {
+                padding: 2px 5px;
+                font-size: 9px;
+            }
+            
+            .total-table .total-row td {
+                font-size: 10px;
+                padding: 4px 5px;
+            }
+            
+            .payment-info {
+                margin-top: 8px;
+                padding: 6px;
+                font-size: 8px;
+            }
+            
+            .payment-info .section-title {
+                font-size: 9px;
+            }
+            
+            .notes {
+                margin-top: 8px;
+                padding: 6px;
+                font-size: 8px;
+            }
+            
+            .notes .section-title {
+                font-size: 9px;
+            }
+            
+            .footer {
+                margin-top: 8px;
+                padding-top: 6px;
+                font-size: 7px;
+            }
+            
+            .status-badge {
+                padding: 1px 4px;
+                font-size: 7px;
+            }
+            
+            .qr-code {
+                display: none; /* Hide QR code on very small screens */
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            body { 
+                print-color-adjust: exact;
+                margin: 0;
+                padding: 0;
+                background: white !important;
+                font-size: {{ $format === 'thermal' ? '11px' : '14px' }} !important;
+            }
+            
+            .invoice-container { 
+                max-width: {{ $format === 'thermal' ? '80mm' : 'none' }};
+                width: {{ $format === 'thermal' ? '80mm' : '100%' }};
+                margin: 0 auto;
+                padding: {{ $format === 'thermal' ? '2mm' : '10mm' }};
+                box-shadow: none;
+            }
+            
+            /* Reset mobile styles for print */
+            .invoice-header {
+                break-inside: avoid;
+                flex-direction: {{ $format === 'thermal' ? 'column' : 'row' }} !important;
+                text-align: {{ $format === 'thermal' ? 'center' : 'left' }} !important;
+                margin-bottom: {{ $format === 'thermal' ? '8px' : '20px' }} !important;
+                padding-bottom: {{ $format === 'thermal' ? '6px' : '15px' }} !important;
+            }
+            
+            .business-info {
+                margin-bottom: {{ $format === 'thermal' ? '8px' : '0' }} !important;
+            }
+            
+            .business-name {
+                font-size: {{ $format === 'thermal' ? '14px' : '22px' }} !important;
+                margin-bottom: {{ $format === 'thermal' ? '3px' : '5px' }} !important;
+            }
+            
+            .business-details {
+                font-size: {{ $format === 'thermal' ? '9px' : '11px' }} !important;
+                line-height: {{ $format === 'thermal' ? '1.2' : '1.3' }} !important;
+            }
+            
+            .invoice-title {
+                text-align: {{ $format === 'thermal' ? 'center' : 'right' }} !important;
+                font-size: {{ $format === 'thermal' ? '16px' : '24px' }} !important;
+                margin-top: {{ $format === 'thermal' ? '0' : '0' }} !important;
+            }
+            
+            .invoice-meta {
+                flex-direction: {{ $format === 'thermal' ? 'column' : 'row' }} !important;
+                margin-bottom: {{ $format === 'thermal' ? '8px' : '20px' }} !important;
+                gap: {{ $format === 'thermal' ? '6px' : '0' }} !important;
+                break-inside: avoid;
+            }
+            
+            .bill-to, .invoice-details {
+                width: {{ $format === 'thermal' ? '100%' : 'auto' }} !important;
+                margin: {{ $format === 'thermal' ? '0' : '0' }} !important;
+                flex: {{ $format === 'thermal' ? 'none' : '1' }} !important;
+            }
+            
+            .section-title {
+                font-size: {{ $format === 'thermal' ? '10px' : '13px' }} !important;
+                margin-bottom: {{ $format === 'thermal' ? '3px' : '6px' }} !important;
+            }
+            
+            .customer-info, .order-info {
+                font-size: {{ $format === 'thermal' ? '9px' : '11px' }} !important;
+                line-height: {{ $format === 'thermal' ? '1.2' : '1.3' }} !important;
+            }
+            
+            .items-table {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                font-size: {{ $format === 'thermal' ? '8px' : '11px' }} !important;
+                margin-bottom: {{ $format === 'thermal' ? '8px' : '20px' }} !important;
+            }
+            
+            .items-table th, .items-table td {
+                padding: {{ $format === 'thermal' ? '2px 1px' : '6px 8px' }} !important;
+                font-size: {{ $format === 'thermal' ? '8px' : '11px' }} !important;
+                line-height: {{ $format === 'thermal' ? '1.1' : '1.2' }} !important;
+            }
+            
+            .items-table th {
+                font-size: {{ $format === 'thermal' ? '8px' : '11px' }} !important;
+            }
+            
+            .items-table thead {
+                display: table-header-group;
+            }
+            
+            .items-table tbody {
+                display: table-row-group;
+            }
+            
+            @if($format === 'thermal')
+            /* Hide discount column for thermal printing */
+            .items-table th:nth-child(4), 
+            .items-table td:nth-child(4) { 
+                display: none !important; 
+            }
+            @endif
+            
+            .total-section {
+                break-inside: avoid;
+                width: {{ $format === 'thermal' ? '100%' : '50%' }} !important;
+                margin-top: {{ $format === 'thermal' ? '6px' : '15px' }} !important;
+            }
+            
+            .total-table td {
+                padding: {{ $format === 'thermal' ? '2px 3px' : '5px 8px' }} !important;
+                font-size: {{ $format === 'thermal' ? '9px' : '11px' }} !important;
+            }
+            
+            .total-table .total-row td {
+                font-size: {{ $format === 'thermal' ? '10px' : '13px' }} !important;
+                padding: {{ $format === 'thermal' ? '3px 3px' : '6px 8px' }} !important;
+            }
+            
+            .payment-info,
+            .notes {
+                break-inside: avoid;
+                margin-top: {{ $format === 'thermal' ? '6px' : '15px' }} !important;
+                padding: {{ $format === 'thermal' ? '4px' : '10px' }} !important;
+                font-size: {{ $format === 'thermal' ? '8px' : '10px' }} !important;
+            }
+            
+            .footer {
+                margin-top: {{ $format === 'thermal' ? '6px' : '20px' }} !important;
+                font-size: {{ $format === 'thermal' ? '7px' : '9px' }} !important;
+                padding-top: {{ $format === 'thermal' ? '4px' : '10px' }} !important;
+            }
+            
+            .status-badge {
+                border: 1px solid currentColor;
+                padding: {{ $format === 'thermal' ? '1px 3px' : '2px 6px' }} !important;
+                font-size: {{ $format === 'thermal' ? '7px' : '9px' }} !important;
+            }
+            
+            /* Ensure backgrounds print */
+            .items-table th {
+                background-color: var(--primary-color) !important;
+                color: white !important;
+            }
+            
+            @if($format === 'thermal')
+            .qr-code {
+                display: none !important;
+            }
+            @endif
         }
 
         @if($format === 'thermal')
@@ -304,16 +681,16 @@
             <tbody>
                 @foreach($order->orderMeta as $meta)
                 <tr>
-                    <td>
+                    <td data-label="{{ __('client.item') }}">
                         <strong>{{ $meta->product_name }}</strong>
                         @if($meta->product_sku && ($invoiceSettings['show_sku'] ?? true))
                             <br><small style="color: var(--secondary-color);">{{ __('client.sku') }}: {{ $meta->product_sku }}</small>
                         @endif
                     </td>
-                    <td class="text-center">{{ $meta->quantity }}</td>
-                    <td class="text-right">{{ $currencySymbol }}{{ number_format($meta->unit_price, 2) }}</td>
+                    <td class="text-center" data-label="{{ __('common.qty') }}">{{ $meta->quantity }}</td>
+                    <td class="text-right" data-label="{{ __('client.price') }}">{{ $currencySymbol }}{{ number_format($meta->unit_price, 2) }}</td>
                     @if($format !== 'thermal')
-                        <td class="text-right">
+                        <td class="text-right" data-label="{{ __('client.discount') }}">
                             @if($meta->discount_amount > 0)
                                 -{{ $currencySymbol }}{{ number_format($meta->discount_amount, 2) }}
                             @else
@@ -321,7 +698,7 @@
                             @endif
                         </td>
                     @endif
-                    <td class="text-right"><strong>{{ $currencySymbol }}{{ number_format($meta->total_price, 2) }}</strong></td>
+                    <td class="text-right" data-label="{{ __('common.total') }}"><strong>{{ $currencySymbol }}{{ number_format($meta->total_price, 2) }}</strong></td>
                 </tr>
                 @endforeach
             </tbody>

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Vinkla\Hashids\Facades\Hashids;
 
 class OrderController extends Controller
 {
@@ -345,7 +346,8 @@ class OrderController extends Controller
         
         try {
             // Generate invoice URL
-            $invoiceUrl = route('client.orders.invoice', ['order' => $order, 'format' => 'a4']);
+            $hash = Hashids::encode($order->id);
+            $invoiceUrl = route('public.invoice', ['hash' => $hash]);
             
             // Send through NotificationService
             $message = $this->buildInvoiceMessage($order, $invoiceUrl);

@@ -7,6 +7,7 @@ use App\Http\Controllers\Client\ClientAuthController;
 use App\Http\Controllers\Client\DashboardController as ClientDashboardController;
 use App\Http\Controllers\Client\FacebookController;
 use App\Http\Controllers\FacebookWebhookController;
+use App\Http\Controllers\PublicInvoiceController;
 
 // Language switching route
 Route::get('/set-language/{locale}', function ($locale) {
@@ -32,6 +33,9 @@ Route::get('/terms-of-service', function () {
 
 Route::get('/data-deletion', [App\Http\Controllers\DataDeletionController::class, 'show'])->name('data-deletion');
 Route::post('/data-deletion', [App\Http\Controllers\DataDeletionController::class, 'submit'])->name('data-deletion.submit');
+
+// Public Invoice Route
+Route::get('/invoice/{hash}', [PublicInvoiceController::class, 'show'])->name('public.invoice');
 
 // Global routes that landing page expects
 Route::get('/login', function () {
