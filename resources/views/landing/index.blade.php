@@ -475,8 +475,82 @@
 
     // Demo function
     function playDemo() {
-        // Replace with your demo video URL or modal
-        alert('Demo video would open here. Replace this with your actual demo.');
+        // Create and show video modal
+        showDemoModal();
+    }
+
+    // Function to create and show demo modal
+    function showDemoModal() {
+        // Get translated content
+        const modalTitle = @json(__('welcome.demo_modal_title'));
+        const modalDescription = @json(__('welcome.demo_modal_description'));
+        
+        // Create modal HTML
+        const modalHtml = `
+            <div id="demo-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80">
+                <div class="relative max-w-4xl w-full mx-4">
+                    <!-- Close button -->
+                    <button onclick="closeDemoModal()" class="absolute -top-12 right-0 text-white hover:text-gray-300 text-2xl z-10">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    
+                    <!-- Video container -->
+                    <div class="bg-black rounded-lg overflow-hidden">
+                        <video id="modal-video" controls autoplay class="w-full h-auto max-h-[70vh]">
+                            <source src="/demo/demo.mp4" type="video/mp4">
+                            <p class="text-white text-center p-8">
+                                Your browser does not support the video tag.
+                                <a href="/demo/demo.mp4" class="text-blue-400 underline">Download the video</a>
+                            </p>
+                        </video>
+                        
+                        <!-- Video info -->
+                        <div class="p-6 bg-gray-900">
+                            <h3 class="text-xl font-semibold text-white mb-2">${modalTitle}</h3>
+                            <p class="text-gray-300">${modalDescription}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Prevent body scroll
+        document.body.style.overflow = 'hidden';
+        
+        // Close modal when clicking outside video
+        document.getElementById('demo-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDemoModal();
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDemoModal();
+            }
+        }, { once: true });
+    }
+
+    // Function to close demo modal
+    function closeDemoModal() {
+        const modal = document.getElementById('demo-modal');
+        if (modal) {
+            // Pause video before removing
+            const video = document.getElementById('modal-video');
+            if (video) {
+                video.pause();
+            }
+            
+            // Remove modal
+            modal.remove();
+            
+            // Restore body scroll
+            document.body.style.overflow = 'auto';
+        }
     }
 
     // Header background on scroll

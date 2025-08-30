@@ -270,8 +270,187 @@
             </main>
         </div>
 
+        <!-- Demo Video Section -->
+        <section class="w-full max-w-4xl mx-auto mt-16 mb-8 px-6 lg:px-8">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl lg:text-3xl font-bold text-[#1b1b18] dark:text-[#EDEDEC] mb-4">
+                    See F-Commerce in Action
+                </h2>
+                <p class="text-lg text-[#706f6c] dark:text-[#A1A09A] max-w-2xl mx-auto">
+                    Watch how our platform seamlessly connects Facebook Messenger with your e-commerce business
+                </p>
+            </div>
+            
+            <!-- Video Container -->
+            <div class="relative bg-white dark:bg-[#161615] rounded-xl overflow-hidden shadow-2xl border border-[#e3e3e0] dark:border-[#3E3E3A]">
+                <!-- Video Player -->
+                <div class="relative aspect-video bg-gray-900">
+                    <video 
+                        class="w-full h-full"
+                        controls 
+                        preload="metadata"
+                        id="demo-video"
+                        style="object-fit: contain;"
+                    >
+                        <source src="/demo/demo.mp4" type="video/mp4">
+                        <p class="text-white text-center p-8">
+                            Your browser does not support the video tag. 
+                            <a href="/demo/demo.mp4" class="text-blue-400 underline">Download the video</a> instead.
+                        </p>
+                    </video>
+                    
+                    <!-- Debug info (remove in production) -->
+                    <div class="absolute top-2 left-2 bg-black bg-opacity-50 text-white text-xs p-2 rounded">
+                        Video Path: /demo/demo.mp4
+                    </div>
+                    
+                    <!-- Play Button Overlay -->
+                    <div id="play-overlay" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 opacity-100 transition-opacity duration-300 cursor-pointer">
+                        <div class="w-20 h-20 lg:w-24 lg:h-24 bg-white bg-opacity-90 rounded-full flex items-center justify-center shadow-lg hover:bg-opacity-100 transition-all duration-200">
+                            <svg class="w-8 h-8 lg:w-10 lg:h-10 text-[#1b1b18] ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M6.5 5.5v9l7-4.5-7-4.5z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Video Info -->
+                <div class="p-6 lg:p-8">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                        <div class="mb-4 lg:mb-0">
+                            <h3 class="text-lg font-semibold text-[#1b1b18] dark:text-[#EDEDEC] mb-2">
+                                Facebook Page Connection Demo
+                            </h3>
+                            <p class="text-sm text-[#706f6c] dark:text-[#A1A09A]">
+                                Learn how to connect your Facebook page and start automating customer interactions
+                            </p>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex flex-col sm:flex-row gap-3 lg:flex-shrink-0">
+                            @auth
+                                <a href="{{ url('/client/dashboard') }}" 
+                                   class="inline-flex items-center justify-center px-6 py-3 bg-[#f53003] hover:bg-[#e02a00] text-white font-medium rounded-lg transition-colors duration-200">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                    </svg>
+                                    Go to Dashboard
+                                </a>
+                            @else
+                                <a href="{{ route('register') }}" 
+                                   class="inline-flex items-center justify-center px-6 py-3 bg-[#f53003] hover:bg-[#e02a00] text-white font-medium rounded-lg transition-colors duration-200">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                    </svg>
+                                    Get Started Free
+                                </a>
+                                <a href="{{ route('login') }}" 
+                                   class="inline-flex items-center justify-center px-6 py-3 border-2 border-[#e3e3e0] dark:border-[#3E3E3A] hover:border-[#1b1b18] dark:hover:border-[#EDEDEC] text-[#1b1b18] dark:text-[#EDEDEC] font-medium rounded-lg transition-colors duration-200">
+                                    Sign In
+                                </a>
+                            @endauth
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Features Highlight -->
+            <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="w-12 h-12 mx-auto mb-4 bg-[#f53003] bg-opacity-10 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-[#f53003]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
+                    </div>
+                    <h4 class="font-semibold text-[#1b1b18] dark:text-[#EDEDEC] mb-2">Auto-Messaging</h4>
+                    <p class="text-sm text-[#706f6c] dark:text-[#A1A09A]">Automatically respond to customer inquiries and manage conversations</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-12 h-12 mx-auto mb-4 bg-[#f53003] bg-opacity-10 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-[#f53003]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                        </svg>
+                    </div>
+                    <h4 class="font-semibold text-[#1b1b18] dark:text-[#EDEDEC] mb-2">Order Management</h4>
+                    <p class="text-sm text-[#706f6c] dark:text-[#A1A09A]">Process orders directly through Messenger with automated workflows</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-12 h-12 mx-auto mb-4 bg-[#f53003] bg-opacity-10 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-[#f53003]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                    </div>
+                    <h4 class="font-semibold text-[#1b1b18] dark:text-[#EDEDEC] mb-2">Analytics</h4>
+                    <p class="text-sm text-[#706f6c] dark:text-[#A1A09A]">Track customer interactions and business performance metrics</p>
+                </div>
+            </div>
+        </section>
+
         @if (Route::has('login'))
             <div class="h-14.5 hidden lg:block"></div>
         @endif
+
+        <!-- Video JavaScript -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const video = document.getElementById('demo-video');
+                const overlay = document.getElementById('play-overlay');
+                
+                if (video && overlay) {
+                    // Handle play button click
+                    overlay.addEventListener('click', function() {
+                        video.play();
+                        overlay.style.opacity = '0';
+                        overlay.style.pointerEvents = 'none';
+                    });
+                    
+                    // Show overlay when video is paused
+                    video.addEventListener('pause', function() {
+                        overlay.style.opacity = '1';
+                        overlay.style.pointerEvents = 'auto';
+                    });
+                    
+                    // Hide overlay when video is playing
+                    video.addEventListener('play', function() {
+                        overlay.style.opacity = '0';
+                        overlay.style.pointerEvents = 'none';
+                    });
+                    
+                    // Check if video can load
+                    video.addEventListener('loadeddata', function() {
+                        console.log('Video loaded successfully');
+                    });
+                    
+                    video.addEventListener('error', function(e) {
+                        console.error('Video loading error:', e);
+                        console.error('Error details:', video.error);
+                        
+                        // Show fallback message
+                        const videoContainer = video.parentElement;
+                        videoContainer.innerHTML = `
+                            <div class="flex items-center justify-center h-full bg-gray-100 dark:bg-gray-800">
+                                <div class="text-center p-8">
+                                    <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                    </svg>
+                                    <h3 class="text-lg font-semibold mb-2 text-[#1b1b18] dark:text-[#EDEDEC]">Demo Video</h3>
+                                    <p class="text-sm text-[#706f6c] dark:text-[#A1A09A] mb-4">
+                                        Unable to load video player. 
+                                    </p>
+                                    <a href="/demo/demo.mp4" target="_blank" class="inline-flex items-center px-4 py-2 bg-[#f53003] text-white rounded-lg hover:bg-[#e02a00] transition-colors duration-200">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                        </svg>
+                                        Download Video
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+            });
+        </script>
     </body>
 </html>

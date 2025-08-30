@@ -1,0 +1,104 @@
+FACEBOOK INTEGRATION TEST INSTRUCTIONS
+=========================================
+
+Application: F-Commerce - Facebook Messenger Business Automation
+Domain: https://fcommerce.softstation.xyz
+Test Facebook Page: "Sell Online BD"
+
+TEST ACCOUNT CREDENTIALS
+========================
+Email: aman@gmail.com
+Password: 12345678
+
+STEP-BY-STEP TESTING INSTRUCTIONS
+=================================
+
+Step 1: Access the Application
+------------------------------
+1. Go to https://fcommerce.softstation.xyz
+2. Click "Login" in the top-right corner
+3. Enter the credentials above (this is the account owner's real account)
+4. Click "Log In" to access the dashboard
+
+Step 2: Verify Connected Page
+-----------------------------
+1. Click "Facebook Pages" in the left sidebar menu
+2. Verify that "Sell Online BD" page shows "Connected" status
+3. Note: The page connection process is demonstrated in the provided video
+
+Step 3: Test Incoming Message Reception
+---------------------------------------
+1. Open Facebook in another browser tab
+2. Go to the "Sell Online BD" Facebook page
+3. From a different Facebook account, send a test message: "Hello, I need help with your products"
+4. Return to the application and click "Messages" in the sidebar
+5. VERIFY: The incoming message appears in the application interface
+6. VERIFY: Customer profile is automatically created from Facebook data
+
+Step 4: Test Outgoing Message Sending
+-------------------------------------
+1. In the application's Messages section, click on the test conversation
+2. Type a reply: "Thank you for contacting us! How can we help you today?"
+3. Click "Send" 
+4. Return to Facebook Messenger
+5. VERIFY: The reply appears in the Facebook conversation
+6. VERIFY: Message is properly delivered to the customer
+
+Step 5: Test Webhook Functionality
+----------------------------------
+1. Send multiple messages from Facebook to test webhook reliability
+2. VERIFY: All messages are received in real-time in the application
+3. VERIFY: Message timestamps and sender information are accurate
+4. VERIFY: Conversation flow is maintained properly
+
+Step 6: Test Customer Data Management
+------------------------------------
+1. Have 2-3 different Facebook accounts message the page
+2. Go to "Customers" section in the application
+3. VERIFY: Customer profiles are automatically created
+4. VERIFY: Customer names and profile information are imported from Facebook
+5. VERIFY: Message history is maintained for each customer
+
+EXPECTED RESULTS
+===============
+✓ Facebook page is already connected (as shown in the provided video)
+✓ Messages flow bidirectionally between Facebook Messenger and application
+✓ Customer information is automatically captured from Facebook profiles
+✓ All Facebook permissions are used appropriately for business communication
+✓ Real-time message synchronization works reliably
+✓ Customer conversation history is maintained accurately
+
+TECHNICAL IMPLEMENTATION
+========================
+- Webhook URL: https://fcommerce.softstation.xyz/api/webhooks/facebook
+- Permissions Used:
+  * pages_messaging: Send and receive messages to/from customers
+  * pages_read_engagement: Read customer interactions and engagement data
+  * pages_manage_metadata: Manage page connection status and information
+- Integration Purpose: Enable businesses to manage customer communications, 
+  automate responses, and streamline customer service through Facebook Messenger
+
+PRIVACY & DATA HANDLING
+======================
+- Customer messages are processed only for business communication purposes
+- Personal data is handled according to Facebook's Platform Policy
+- No data is shared with third parties
+- All data processing complies with applicable privacy regulations
+
+SUPPORT CONTACT
+==============
+If you encounter any issues during testing, please document them in your review.
+This integration helps businesses automate customer service and manage 
+Facebook Messenger communications more effectively.
+
+APPLICATION FEATURES (For Context)
+=================================
+The application provides businesses with:
+- Automated customer message management
+- Customer profile organization
+- Business communication tools
+- Integration with existing business workflows
+- Streamlined customer service operations
+
+Note: Internal business operations (orders, invoicing, etc.) are separate 
+from the Facebook integration and don't require Facebook's review.

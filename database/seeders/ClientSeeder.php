@@ -34,6 +34,28 @@ class ClientSeeder extends Seeder
             ]
         );
 
+        // Create Facebook test client for review
+        $testClient = \App\Models\Client::firstOrCreate(
+            ['email' => 'test@sellonlinebd.com'],
+            [
+                'name' => 'Facebook Test User',
+                'password' => bcrypt('TestUser123!'),
+                'phone' => '+8801700000000',
+                'status' => 'active',
+                'plan_type' => 'free',
+                'settings' => [
+                    'language' => 'en',
+                    'notifications' => true,
+                    'email_alerts' => true,
+                ],
+                'profile_data' => [
+                    'business_type' => 'e-commerce',
+                    'business_name' => 'Sell Online BD Test',
+                    'location' => 'Dhaka, Bangladesh'
+                ]
+            ]
+        );
+
         // Create a premium client
         $premiumClient = \App\Models\Client::firstOrCreate(
             ['email' => 'fatima@example.com'],
@@ -102,21 +124,16 @@ class ClientSeeder extends Seeder
                 continue;
             }
             
-            $quantity = rand(1, 5);
-            $unitPrice = rand(500, 5000);
-            $subtotal = $unitPrice * $quantity;
             $shippingCharge = 60; // Inside Dhaka shipping
+            $subtotal = rand(500, 5000);
             $totalAmount = $subtotal + $shippingCharge;
 
-            \App\Models\Order::create([
+            $order = \App\Models\Order::create([
                 'client_id' => $freeClient->id,
-                'facebook_page_id' => $facebookPage->id, // Add required facebook_page_id
+                'facebook_page_id' => $facebookPage->id,
                 'customer_id' => $i,
-                'facebook_user_id' => "fb_user_{$i}", // Add facebook_user_id
+                'facebook_user_id' => "fb_user_{$i}",
                 'order_number' => $orderNumber,
-                'product_name' => "Product {$i}",
-                'quantity' => $quantity,
-                'unit_price' => $unitPrice,
                 'subtotal' => $subtotal,
                 'shipping_charge' => $shippingCharge,
                 'shipping_zone' => 'inside_dhaka',
@@ -129,6 +146,38 @@ class ClientSeeder extends Seeder
                 'status' => ['pending', 'confirmed', 'delivered'][rand(0, 2)],
                 'payment_method' => 'cod'
             ]);
+
+            // Get a random product for the order
+            $products = \App\Models\Product::where('client_id', $freeClient->id)->get();
+            if ($products->isNotEmpty()) {
+                $product = $products->random();
+                $quantity = rand(1, 3);
+                $totalPrice = $product->sale_price ? $product->sale_price * $quantity : $product->price * $quantity;
+                
+                // Create OrderMeta entries for the order
+                \App\Models\OrderMeta::create([
+                    'order_id' => $order->id,
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'product_sku' => $product->sku,
+                    'quantity' => $quantity,
+                    'unit_price' => $product->sale_price ?: $product->price,
+                    'total_price' => $totalPrice,
+                    'product_snapshot' => [
+                        'name' => $product->name,
+                        'sku' => $product->sku,
+                        'category' => $product->category,
+                        'price' => $product->price,
+                        'sale_price' => $product->sale_price
+                    ]
+                ]);
+                
+                // Update order totals
+                $order->update([
+                    'subtotal' => $totalPrice,
+                    'total_amount' => $totalPrice + $shippingCharge
+                ]);
+            }
         }
 
         // Create sample messages (35 out of 50 limit to test limits)

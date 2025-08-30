@@ -44,4 +44,8 @@ return [
     'section_title_cta' => 'Ready to Start Selling on Facebook?',
     'cta_text' => 'Connect your Facebook page and start your free 14-day trial today.',
     'footer_text' => 'All rights reserved.',
+    
+    // Demo Modal
+    'demo_modal_title' => 'Facebook Page Connection Demo',
+    'demo_modal_description' => 'Learn how to connect your Facebook page and start automating customer interactions with F-Commerce.',
 ];
