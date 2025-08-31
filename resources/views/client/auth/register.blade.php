@@ -100,17 +100,7 @@
             backdrop-filter: blur(8px);
         }
 
-        /* Hide scrollbar while keeping functionality */
-        html, body {
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* Internet Explorer 10+ */
-        }
         
-        html::-webkit-scrollbar,
-        body::-webkit-scrollbar {
-            width: 0px; /* Chrome, Safari and Opera */
-            background: transparent;
-        }
     </style>
 </head>
 <body class="min-h-screen hero-bg">
@@ -302,9 +292,7 @@
             </div>
         </div>
 
-        {{-- Animated Background Elements --}}
-        <div class="absolute top-20 left-10 w-72 h-72 bg-brand-primary/10 rounded-full blur-3xl animate-float"></div>
-        <div class="absolute bottom-20 right-10 w-96 h-96 bg-brand-secondary/10 rounded-full blur-3xl animate-float" style="animation-delay: 3s;"></div>
+        
     </section>
 
     <script>
