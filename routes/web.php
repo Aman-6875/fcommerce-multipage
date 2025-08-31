@@ -19,6 +19,7 @@ Route::get('/set-language/{locale}', function ($locale) {
 
 // Landing Page
 Route::middleware(['web', App\Http\Middleware\SetLanguage::class])->get('/', function () {
+    session()->flush();
     return view('landing.index');
 })->name('home');
 

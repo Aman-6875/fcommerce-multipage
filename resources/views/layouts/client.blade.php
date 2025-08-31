@@ -471,13 +471,23 @@
     @php
         $connectedPages = auth('client')->user()->facebookPages()->where('is_connected', true)->get();
         $selectedPageId = getActiveSessionPageId();
-        $selectedPage = $connectedPages->where('id', $selectedPageId)->first() ?? $connectedPages->first();
-        if ($selectedPage && !$selectedPageId) {
-            setActiveSessionPageId($selectedPage->id);
+        $selectedPage = null;
+        
+        // Only process if client has connected pages
+        if ($connectedPages->count() > 0) {
+            $selectedPage = $connectedPages->where('id', $selectedPageId)->first();
+            
+            // If no page is selected, auto-select the first one
+            if (!$selectedPage) {
+                $selectedPage = $connectedPages->first();
+                if ($selectedPage) {
+                    setActiveSessionPageId($selectedPage->id);
+                }
+            }
         }
     @endphp
     
-    @if($connectedPages->count() > 0)
+    @if($connectedPages->count() > 0 && $selectedPage)
     <div class="page-switcher" style="padding: 15px; border-bottom: 1px solid #e6e6e6; margin-bottom: 10px;">
         <div style="margin-bottom: 8px;">
             <small style="color: #888; font-size: 11px; text-transform: uppercase; font-weight: 600;">WORKING ON</small>

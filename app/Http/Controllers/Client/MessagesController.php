@@ -16,9 +16,10 @@ class MessagesController extends Controller
     {
         $activePageId = getActiveSessionPageId();
         
+        // Middleware should handle this, but double-check
         if (!$activePageId) {
             return redirect()->route('client.facebook.index')
-                ->with('error', 'Please select a Facebook page to work with first.');
+                ->with('error', 'Please connect and select a Facebook page first.');
         }
         
         // Get customers from this page only

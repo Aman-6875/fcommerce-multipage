@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web([
             \App\Http\Middleware\SetLanguage::class,
             \App\Http\Middleware\TrustProxies::class,
+            \App\Http\Middleware\EnsureActiveFacebookPage::class,
         ]);
 
         // Exclude webhook routes from CSRF protection
