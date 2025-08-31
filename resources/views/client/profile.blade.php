@@ -79,19 +79,19 @@
                     @if(auth('client')->user()->isFree())
                         <div class="alert alert-info">
                             <small>
-                                <strong>Trial:</strong> {{ max(0, 10 - auth('client')->user()->created_at->diffInDays(now())) }} days left<br>
-                                <strong>Pages:</strong> {{ auth('client')->user()->facebookPages()->count() }}/{{ auth('client')->user()->getFacebookPageLimit() }}<br>
-                                <strong>Customers:</strong> {{ auth('client')->user()->customers()->count() }}/20<br>
-                                <strong>Messages:</strong> {{ auth('client')->user()->customers()->sum('interaction_count') }}/50
+                                <strong>{{ __('client.trial') }}:</strong> {{ max(0, 10 - floor(auth('client')->user()->created_at->diffInDays(now()))) }} {{ __('client.days_left') }}<br>
+                                <strong>{{ __('client.facebook_pages') }}:</strong> {{ auth('client')->user()->facebookPages()->count() }}/{{ auth('client')->user()->getFacebookPageLimit() }}<br>
+                                <strong>{{ __('client.customers') }}:</strong> {{ auth('client')->user()->customers()->count() }}/20<br>
+                                <strong>{{ __('client.messages') }}:</strong> {{ auth('client')->user()->customers()->sum('interaction_count') }}/50
                             </small>
                         </div>
                         <a href="#" class="btn btn-warning btn-sm w-100">{{ __('client.upgrade_now') }}</a>
                     @else
                         <div class="alert alert-success">
                             <small>
-                                <strong>Status:</strong> Active<br>
-                                <strong>Expires:</strong> {{ auth('client')->user()->subscription_expires_at ? auth('client')->user()->subscription_expires_at->format('M d, Y') : 'Never' }}<br>
-                                <strong>Pages:</strong> {{ auth('client')->user()->facebookPages()->count() }}@if(auth('client')->user()->plan_type !== 'enterprise')/{{ auth('client')->user()->getFacebookPageLimit() }}@endif
+                                <strong>{{ __('common.status') }}:</strong> {{ __('common.active') }}<br>
+                                <strong>{{ __('client.expires') }}:</strong> {{ auth('client')->user()->subscription_expires_at ? auth('client')->user()->subscription_expires_at->format('M d, Y') : __('common.never') }}<br>
+                                <strong>{{ __('client.facebook_pages') }}:</strong> {{ auth('client')->user()->facebookPages()->count() }}@if(auth('client')->user()->plan_type !== 'enterprise')/{{ auth('client')->user()->getFacebookPageLimit() }}@endif
                             </small>
                         </div>
                     @endif

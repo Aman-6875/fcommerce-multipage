@@ -86,6 +86,11 @@ class Client extends Authenticatable
         return $this->hasManyThrough(PageCustomer::class, FacebookPage::class);
     }
 
+    public function upgradeRequests()
+    {
+        return $this->hasMany(UpgradeRequest::class);
+    }
+
     // Helper methods
     public function isActive(): bool
     {
@@ -114,7 +119,7 @@ class Client extends Authenticatable
     public function getTrialDaysRemaining(): int
     {
         $trialDays = 10;
-        return max(0, $trialDays - $this->created_at->diffInDays(now()));
+        return max(0, $trialDays - floor($this->created_at->diffInDays(now())));
     }
 
     public function isTrialExpired(): bool

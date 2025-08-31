@@ -75,10 +75,6 @@
                                             <td>{{ $stats['total_customers'] }}</td>
                                         </tr>
                                         <tr>
-                                            <th>@lang('admin.total_messages')</th>
-                                            <td>{{ $stats['total_messages'] }}</td>
-                                        </tr>
-                                        <tr>
                                             <th>@lang('admin.facebook_pages')</th>
                                             <td>{{ $stats['facebook_pages'] }}</td>
                                         </tr>

@@ -78,6 +78,24 @@ Route::prefix('admin')->name('admin.')->middleware(['web', App\Http\Middleware\S
         Route::get('clients/premium', [\App\Http\Controllers\Admin\ClientManagementController::class, 'premium'])->name('clients.premium');
         Route::resource('clients', \App\Http\Controllers\Admin\ClientManagementController::class);
 
+        // Upgrade Request Management Routes
+        Route::prefix('upgrade-requests')->name('upgrade-requests.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\UpgradeRequestController::class, 'index'])->name('index');
+            Route::get('/{upgradeRequest}', [\App\Http\Controllers\Admin\UpgradeRequestController::class, 'show'])->name('show');
+            Route::post('/{upgradeRequest}/approve', [\App\Http\Controllers\Admin\UpgradeRequestController::class, 'approve'])->name('approve');
+            Route::post('/{upgradeRequest}/reject', [\App\Http\Controllers\Admin\UpgradeRequestController::class, 'reject'])->name('reject');
+            Route::post('/bulk-action', [\App\Http\Controllers\Admin\UpgradeRequestController::class, 'bulkAction'])->name('bulk-action');
+        });
+
+        // Order Management Routes
+        Route::prefix('orders')->name('orders.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\OrderManagementController::class, 'index'])->name('index');
+            Route::get('/pending', [\App\Http\Controllers\Admin\OrderManagementController::class, 'pending'])->name('pending');
+            Route::get('/delivered', [\App\Http\Controllers\Admin\OrderManagementController::class, 'delivered'])->name('delivered');
+            Route::get('/{order}', [\App\Http\Controllers\Admin\OrderManagementController::class, 'show'])->name('show');
+            Route::patch('/{order}/status', [\App\Http\Controllers\Admin\OrderManagementController::class, 'updateStatus'])->name('update-status');
+        });
+
         // Language switcher
         Route::get('language/{locale}', function ($locale) {
             app()->setLocale($locale);
@@ -93,20 +111,25 @@ Route::prefix('admin')->name('admin.')->middleware(['web', App\Http\Middleware\S
             Route::get('/calendar', function() { return view('admin.services.calendar'); })->name('calendar');
         });
 
-        // Reports Routes (to be implemented)
+        // Reports Routes
         Route::prefix('reports')->name('reports.')->group(function () {
-            Route::get('/revenue', function() { return view('admin.reports.revenue'); })->name('revenue');
-            Route::get('/clients', function() { return view('admin.reports.clients'); })->name('clients');
+            Route::get('/revenue', [\App\Http\Controllers\Admin\ReportController::class, 'revenue'])->name('revenue');
+            Route::get('/clients', [\App\Http\Controllers\Admin\ReportController::class, 'clients'])->name('clients');
+            Route::get('/orders', [\App\Http\Controllers\Admin\ReportController::class, 'orders'])->name('orders');
         });
 
-        // Settings Routes (to be implemented)
+        // Settings Routes
         Route::prefix('settings')->name('settings.')->group(function () {
-            Route::get('/general', function() { return view('admin.settings.general'); })->name('general');
-            Route::get('/users', function() { return view('admin.settings.users'); })->name('users');
+            Route::get('/general', [\App\Http\Controllers\Admin\SettingsController::class, 'general'])->name('general');
+            Route::post('/general', [\App\Http\Controllers\Admin\SettingsController::class, 'updateGeneral'])->name('general.update');
+            Route::get('/users', [\App\Http\Controllers\Admin\SettingsController::class, 'users'])->name('users');
+            Route::post('/users', [\App\Http\Controllers\Admin\SettingsController::class, 'createUser'])->name('users.store');
+            Route::get('/payments', [\App\Http\Controllers\Admin\SettingsController::class, 'payments'])->name('payments');
+            Route::post('/payments', [\App\Http\Controllers\Admin\SettingsController::class, 'updatePayments'])->name('payments.update');
         });
 
         // Profile route
-        Route::get('/profile', function() { return view('admin.profile'); })->name('profile');
+        Route::get('/profile', [\App\Http\Controllers\Admin\AdminAuthController::class, 'profile'])->name('profile');
     });
 });
 
@@ -147,7 +170,7 @@ Route::prefix('client')->name('client.')->middleware(['web', App\Http\Middleware
         Route::get('/facebook-pages', [FacebookController::class, 'index'])->name('facebook-pages'); // Backward compatibility
         
         Route::get('/customers', function() { 
-            $customers = auth('client')->user()->customers()->latest()->get() ?? collect();
+            $customers = collect(); // Customers will be loaded via the relationship once defined
             return view('client.customers', compact('customers')); 
         })->name('customers');
         
@@ -208,13 +231,28 @@ Route::prefix('client')->name('client.')->middleware(['web', App\Http\Middleware
         });
         
         Route::get('/services', function() { 
-            $services = auth('client')->user()->services()->latest()->get() ?? collect();
+            $services = collect(); // Services will be loaded via the relationship once defined
             return view('client.services', compact('services')); 
         })->name('services');
         
         Route::get('/settings', function() { 
             return view('client.settings'); 
         })->name('settings');
+        
+        // Upgrade routes
+        Route::prefix('upgrade')->name('upgrade.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Client\UpgradeController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Client\UpgradeController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Client\UpgradeController::class, 'store'])->name('store');
+            Route::get('/{upgradeRequest}', [\App\Http\Controllers\Client\UpgradeController::class, 'show'])->name('show');
+        });
+        
+        // Settings routes
+        Route::put('/settings', [\App\Http\Controllers\Client\SettingsController::class, 'updateAccount'])->name('settings.update');
+        Route::put('/settings/password', [\App\Http\Controllers\Client\SettingsController::class, 'updatePassword'])->name('password.update');
+        Route::put('/settings/notifications', [\App\Http\Controllers\Client\SettingsController::class, 'updateNotifications'])->name('notifications.update');
+        Route::put('/settings/business', [\App\Http\Controllers\Client\SettingsController::class, 'updateBusiness'])->name('business.update');
+        Route::delete('/account', [\App\Http\Controllers\Client\SettingsController::class, 'deleteAccount'])->name('account.delete');
     });
 });
 
@@ -248,9 +286,9 @@ Route::get('/debug-webhook', function() {
         'test_url' => url('/webhook-test'),
         'app_url' => config('app.url'),
         'facebook_config' => [
-            'app_id' => config('services.facebook.app_id'),
-            'webhook_verify_token' => config('services.facebook.webhook_verify_token'),
-            'app_secret_set' => !empty(config('services.facebook.app_secret'))
+            'app_id' => \App\Helpers\SettingsHelper::getFacebookAppId(),
+            'webhook_verify_token' => \App\Helpers\SettingsHelper::getFacebookWebhookVerifyToken(),
+            'app_secret_set' => !empty(\App\Helpers\SettingsHelper::getFacebookAppSecret())
         ],
         'clients' => $clients->map(function($client) {
             return [

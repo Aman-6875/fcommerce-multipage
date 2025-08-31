@@ -36,9 +36,9 @@
                                     <h3 class="pro-title">{{ $product->name }}</h3>
                                     <p class="text-muted mb-0">{{ $product->description }}</p>
                                     <h2 class="pro-price">
-                                        ${{ $product->sale_price ?? $product->price }} 
+                                        ৳{{ $product->sale_price ?? $product->price }} 
                                         @if ($product->sale_price)
-                                            <span><del>${{ $product->price }}</del></span>
+                                            <span><del>৳{{ $product->price }}</del></span>
                                             <span class="text-danger fw-bold ms-2">{{ round((($product->price - $product->sale_price) / $product->price) * 100) }}% Off</span>
                                         @endif
                                     </h2>

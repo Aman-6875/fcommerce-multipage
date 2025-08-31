@@ -52,10 +52,17 @@ class ClientManagementController extends Controller
             ->latest()
             ->paginate(15);
             
+        // Calculate revenue from orders table
+        $premiumClientIds = Client::where('plan_type', 'premium')->pluck('id');
+        $totalRevenue = \App\Models\Order::whereIn('client_id', $premiumClientIds)
+            ->where('status', 'delivered')
+            ->sum('total_amount') ?? 0;
+        $avgRevenue = $premiumClientIds->count() > 0 ? $totalRevenue / $premiumClientIds->count() : 0;
+        
         $stats = [
             'premium_clients' => $clients->total(),
-            'total_revenue' => Client::where('plan_type', 'premium')->sum('total_spent') ?? 0,
-            'avg_revenue' => Client::where('plan_type', 'premium')->avg('total_spent') ?? 0,
+            'total_revenue' => $totalRevenue,
+            'avg_revenue' => $avgRevenue,
         ];
         
         return view('admin.clients.premium', compact('clients', 'stats'));
@@ -104,16 +111,12 @@ class ClientManagementController extends Controller
             'customers' => function($query) {
                 $query->latest()->limit(10);
             },
-            'facebookPages',
-            'messages' => function($query) {
-                $query->latest()->limit(20);
-            }
+            'facebookPages'
         ]);
         
         $stats = [
             'total_orders' => $client->orders()->count(),
             'total_customers' => $client->customers()->count(),
-            'total_messages' => $client->messages()->count(),
             'facebook_pages' => $client->facebookPages()->count(),
             'revenue' => $client->orders()->sum('total_amount') ?? 0,
         ];

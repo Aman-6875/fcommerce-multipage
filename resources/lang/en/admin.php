@@ -63,4 +63,22 @@ return [
     'add_client' => 'Add Client',
     'joined' => 'Joined',
     'no_clients_found' => 'No clients found',
+    
+    // New menu items
+    'upgrade_requests' => 'Upgrade Requests',
+    'order_management' => 'Order Management',
+    'all_orders' => 'All Orders',
+    'pending_orders' => 'Pending Orders',
+    'delivered_orders' => 'Delivered Orders',
+    'service_management' => 'Service Management',
+    'all_services' => 'All Services',
+    'service_calendar' => 'Service Calendar',
+    'reports' => 'Reports',
+    'revenue_report' => 'Revenue Report',
+    'client_report' => 'Client Report',
+    'order_report' => 'Order Report',
+    'general_settings' => 'General Settings',
+    'admin_users' => 'Admin Users',
+    'payment_settings' => 'Payment Settings',
+    'profile' => 'Profile',
 ];

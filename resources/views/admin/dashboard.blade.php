@@ -684,10 +684,10 @@ section, div, main, article {
     <div class="col-xl-3 col-sm-6">
         <div class="stats-card card-primary">
             <div class="stats-card-body text-white">
-                <div class="stats-number">${{ number_format($stats['total_revenue'] ?? 0, 2) }}</div>
+                <div class="stats-number">৳{{ number_format($stats['total_revenue'] ?? 0, 2) }}</div>
                 <div class="stats-label">{{ __('admin.total_revenue') }}</div>
                 <div class="stats-icon">
-                    <i class="fas fa-dollar-sign"></i>
+                    <i class="fas fa-coins"></i>
                 </div>
             </div>
         </div>

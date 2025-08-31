@@ -654,7 +654,7 @@
                     <div class="plan_status d-flex align-items-center">
                         @if(auth('client')->user()->isFree())
                             @php
-                                $trialDaysLeft = max(0, 10 - auth('client')->user()->created_at->diffInDays(now()));
+                                $trialDaysLeft = max(0, 10 - floor(auth('client')->user()->created_at->diffInDays(now())));
                                 $hasReachedLimits = auth('client')->user()->hasReachedFreeLimits();
                             @endphp
                             @if($hasReachedLimits)

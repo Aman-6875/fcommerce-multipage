@@ -24,7 +24,7 @@ class FacebookWebhookController extends Controller
     public function verify(Request $request)
     {
         Log::info('Webhook verification request received', ['params' => $request->all()]);
-        $verifyToken = config('services.facebook.webhook_verify_token');
+        $verifyToken = \App\Helpers\SettingsHelper::getFacebookWebhookVerifyToken();
 
         if ($request->get('hub_mode') === 'subscribe' && $request->get('hub_verify_token') === $verifyToken) {
             Log::info('Webhook verified successfully');

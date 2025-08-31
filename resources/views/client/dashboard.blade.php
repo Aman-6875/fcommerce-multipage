@@ -345,7 +345,7 @@
                                         {{ $order->status === 'delivered' ? __('common.delivered') : ($order->status === 'pending' ? __('common.pending') : __('common.processing')) }}
                                     </span>
                                 </td>
-                                <td style="border: none; padding: 15px 20px; color: #2d3748; font-weight: 600;">${{ number_format($order->total_amount, 2) }}</td>
+                                <td style="border: none; padding: 15px 20px; color: #2d3748; font-weight: 600;">৳{{ number_format($order->total_amount, 2) }}</td>
                             </tr>
                         @empty
                             <tr>

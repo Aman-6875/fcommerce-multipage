@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Order;
 use App\Models\Service;
 use App\Models\FacebookPage;
+use App\Models\UpgradeRequest;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -18,7 +19,7 @@ class DashboardController extends Controller
             'total_clients' => Client::count(),
             'premium_clients' => Client::whereIn('plan_type', ['premium', 'enterprise'])->count(),
             'total_orders' => Order::count(),
-            'total_revenue' => Order::where('status', 'delivered')->sum('total_amount'),
+            'total_revenue' => UpgradeRequest::where('status', 'approved')->sum('amount'),
             'new_clients_today' => Client::whereDate('created_at', today())->count(),
             'pending_orders' => Order::where('status', 'pending')->count(),
             'active_services' => Service::whereIn('status', ['confirmed', 'in_progress'])->count(),

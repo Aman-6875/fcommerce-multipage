@@ -20,7 +20,7 @@ class FacebookGraphAPIService
     public function getLoginUrl(string $redirectUri): string
     {
         $params = [
-            'client_id' => config('services.facebook.app_id'),
+            'client_id' => \App\Helpers\SettingsHelper::getFacebookAppId(),
             'redirect_uri' => $redirectUri,
             'scope' => 'pages_messaging,pages_read_engagement,read_page_mailboxes,pages_manage_metadata,public_profile',
             'response_type' => 'code',
@@ -33,8 +33,8 @@ class FacebookGraphAPIService
     {
         try {
             $response = Http::get($this->baseUrl . '/oauth/access_token', [
-                'client_id' => config('services.facebook.app_id'),
-                'client_secret' => config('services.facebook.app_secret'),
+                'client_id' => \App\Helpers\SettingsHelper::getFacebookAppId(),
+                'client_secret' => \App\Helpers\SettingsHelper::getFacebookAppSecret(),
                 'redirect_uri' => $redirectUri,
                 'code' => $code
             ]);
@@ -105,7 +105,7 @@ class FacebookGraphAPIService
 
     public function verifyWebhookSignature(string $payload, string $signature): bool
     {
-        $appSecret = config('services.facebook.app_secret');
+        $appSecret = \App\Helpers\SettingsHelper::getFacebookAppSecret();
         if (!$appSecret) {
             Log::error('Facebook app secret is not configured.');
             return false;

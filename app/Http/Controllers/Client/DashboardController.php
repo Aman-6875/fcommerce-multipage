@@ -19,7 +19,7 @@ class DashboardController extends Controller
         // Calculate days remaining in trial
         $trialDaysLeft = 0;
         if ($client->isFree()) {
-            $trialDaysLeft = max(0, 10 - $client->created_at->diffInDays(now()));
+            $trialDaysLeft = max(0, 10 - floor($client->created_at->diffInDays(now())));
         }
 
         $stats = [

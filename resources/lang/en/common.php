@@ -97,4 +97,6 @@ return [
     'error_occurred' => 'An error occurred',
     'qty' => 'Qty',
     'confirmed_at' => 'Confirmed At',
+    'never' => 'Never',
+    'back' => 'Back',
 ];

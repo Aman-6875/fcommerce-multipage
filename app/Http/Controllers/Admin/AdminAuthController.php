@@ -91,4 +91,10 @@ class AdminAuthController extends Controller
 
         return redirect()->route('admin.settings.users')->with('success', 'Admin created successfully.');
     }
+
+    public function profile()
+    {
+        $admin = auth('admin')->user();
+        return view('admin.profile', compact('admin'));
+    }
 }

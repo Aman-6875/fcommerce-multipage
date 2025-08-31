@@ -12,7 +12,7 @@
                     <h4 class="card-title">{{ __('client.account_settings') }}</h4>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ route('client.settings') }}">
+                    <form method="POST" action="{{ route('client.settings.update') }}">
                         @csrf
                         @method('PUT')
                         
@@ -246,10 +246,10 @@
                     @if(auth('client')->user()->isFree())
                         <div class="alert alert-warning">
                             <small>
-                                <strong>Trial:</strong> {{ max(0, 10 - auth('client')->user()->created_at->diffInDays(now())) }} days left
+                                <strong>{{ __('client.trial') }}:</strong> {{ max(0, 10 - floor(auth('client')->user()->created_at->diffInDays(now()))) }} {{ __('client.days_left') }}
                             </small>
                         </div>
-                        <a href="#" class="btn btn-warning btn-sm w-100 mb-2">{{ __('client.upgrade_now') }}</a>
+                        <a href="{{ route('client.upgrade.create') }}" class="btn btn-warning btn-sm w-100 mb-2">{{ __('client.upgrade_now') }}</a>
                         <small class="text-muted d-block text-center">{{ __('client.upgrade_to_unlock_features') }}</small>
                     @else
                         <div class="alert alert-success">
@@ -258,7 +258,7 @@
                                 <strong>Expires:</strong> {{ auth('client')->user()->subscription_expires_at ? auth('client')->user()->subscription_expires_at->format('M d, Y') : 'Never' }}
                             </small>
                         </div>
-                        <a href="#" class="btn btn-outline-primary btn-sm w-100">{{ __('client.manage_subscription') }}</a>
+                        <a href="{{ route('client.upgrade.index') }}" class="btn btn-outline-primary btn-sm w-100">{{ __('client.manage_subscription') }}</a>
                     @endif
                 </div>
             </div>

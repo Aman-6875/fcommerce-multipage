@@ -63,4 +63,22 @@ return [
     'add_client' => 'ক্লায়েন্ট যোগ করুন',
     'joined' => 'যোগদান করেছে',
     'no_clients_found' => 'কোন ক্লায়েন্ট পাওয়া যায়নি',
+    
+    // New menu items
+    'upgrade_requests' => 'আপগ্রেড অনুরোধ',
+    'order_management' => 'অর্ডার ম্যানেজমেন্ট',
+    'all_orders' => 'সমস্ত অর্ডার',
+    'pending_orders' => 'পেন্ডিং অর্ডার',
+    'delivered_orders' => 'ডেলিভারি হওয়া অর্ডার',
+    'service_management' => 'পরিষেবা ম্যানেজমেন্ট',
+    'all_services' => 'সমস্ত পরিষেবা',
+    'service_calendar' => 'পরিষেবা ক্যালেন্ডার',
+    'reports' => 'রিপোর্ট',
+    'revenue_report' => 'রাজস্ব রিপোর্ট',
+    'client_report' => 'ক্লায়েন্ট রিপোর্ট',
+    'order_report' => 'অর্ডার রিপোর্ট',
+    'general_settings' => 'সাধারণ সেটিংস',
+    'admin_users' => 'অ্যাডমিন ব্যবহারকারী',
+    'payment_settings' => 'পেমেন্ট সেটিংস',
+    'profile' => 'প্রোফাইল',
 ];
