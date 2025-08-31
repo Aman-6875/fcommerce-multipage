@@ -1348,9 +1348,9 @@ $(document).ready(function() {
         }
         
         return `
-            <div class="message ${bubbleClass}">
-                <div class="message-bubble">
-                    ${escapeHtml(message.content)}
+            <div class="message-item ${message.type}" data-message-id="${message.id}">
+                <div class="message-bubble ${bubbleClass}">
+                    <div class="message-content">${escapeHtml(message.content)}</div>
                     <div class="message-meta">
                         <span class="message-time">${message.formatted_time || message.time}</span>
                         ${isOutgoing ? `<i class="fas ${statusIcon} message-status" style="color: ${statusColor};" title="${statusTitle}"></i>` : ''}

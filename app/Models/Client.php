@@ -81,6 +81,11 @@ class Client extends Authenticatable
         return $this->hasMany(CustomerSegment::class);
     }
 
+    public function pageCustomers()
+    {
+        return $this->hasManyThrough(PageCustomer::class, FacebookPage::class);
+    }
+
     // Helper methods
     public function isActive(): bool
     {

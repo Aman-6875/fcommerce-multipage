@@ -340,4 +340,44 @@ class FacebookController extends Controller
             return response()->json(['success' => false, 'message' => 'Failed to sync customer messages']);
         }
     }
+
+    /**
+     * Select a Facebook page to work with (stored in session)
+     */
+    public function selectPage(Request $request)
+    {
+        $client = Auth::guard('client')->user();
+        $pageId = $request->input('page_id');
+        
+        $facebookPage = $client->facebookPages()
+            ->where('id', $pageId)
+            ->where('is_connected', true)
+            ->first();
+            
+        if (!$facebookPage) {
+            return back()->with('error', 'Invalid page selected.');
+        }
+        
+        setActiveSessionPageId($facebookPage->id);
+        
+        return back()->with('success', "Now working on {$facebookPage->page_name}");
+    }
+
+    /**
+     * Get the currently selected Facebook page from session
+     */
+    public function getSelectedPage()
+    {
+        $client = Auth::guard('client')->user();
+        $selectedPageId = session('selected_facebook_page_id');
+        
+        if (!$selectedPageId) {
+            return null;
+        }
+        
+        return $client->facebookPages()
+            ->where('id', $selectedPageId)
+            ->where('is_connected', true)
+            ->first();
+    }
 }

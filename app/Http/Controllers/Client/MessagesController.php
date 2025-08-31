@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Client;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\CustomerMessage;
+use App\Models\FacebookPage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
@@ -13,79 +14,111 @@ class MessagesController extends Controller
 {
     public function index($customerId = null)
     {
-        $customers = auth('client')->user()->customers()
-            ->with(['messages' => function($query) {
-                $query->latest()->limit(1);
-            }])
-            ->withCount(['messages as unread_count' => function($query) {
-                $query->where('is_read', false)->where('message_type', 'incoming');
-            }])
+        $activePageId = getActiveSessionPageId();
+        
+        if (!$activePageId) {
+            return redirect()->route('client.facebook.index')
+                ->with('error', 'Please select a Facebook page to work with first.');
+        }
+        
+        // Get customers from this page only
+        $pageCustomers = \App\Models\PageCustomer::where('facebook_page_id', $activePageId)
+            ->with('customer')
             ->orderBy('last_interaction', 'desc')
             ->get();
+
+            
+        $customers = $pageCustomers->map(function($pageCustomer) {
+            $customer = $pageCustomer->customer;
+            if (!$customer) return null;
+            
+            // Get latest message and unread count for this page only
+            $customer->messages = \App\Models\CustomerMessage::where('customer_id', $customer->id)
+                ->where('page_customer_id', $pageCustomer->id)
+                ->latest()->limit(1)->get();
+                
+            $customer->unread_count = \App\Models\CustomerMessage::where('customer_id', $customer->id)
+                ->where('page_customer_id', $pageCustomer->id)
+                ->where('is_read', false)
+                ->where('message_type', 'incoming')
+                ->count();
+                
+            return $customer;
+        })->filter();
         
         $selectedCustomer = null;
         $messages = collect();
         
         if ($customerId) {
-            $selectedCustomer = auth('client')->user()->customers()->find($customerId);
-            if ($selectedCustomer) {
-                $messages = $selectedCustomer->messages()
+            // Get customer for this page only
+            $pageCustomer = \App\Models\PageCustomer::where('facebook_page_id', $activePageId)
+                ->whereHas('customer', function($query) use ($customerId) {
+                    $query->where('id', $customerId);
+                })
+                ->with('customer')
+                ->first();
+                
+            if ($pageCustomer) {
+                $selectedCustomer = $pageCustomer->customer;
+                
+                // Get messages for this page only
+                $messages = \App\Models\CustomerMessage::where('customer_id', $selectedCustomer->id)
+                    ->where('page_customer_id', $pageCustomer->id)
                     ->orderBy('created_at', 'asc')
                     ->limit(100)
                     ->get();
                 
-                // Mark incoming messages as read
-                $selectedCustomer->messages()
+                // Mark as read for this page only
+                \App\Models\CustomerMessage::where('customer_id', $selectedCustomer->id)
+                    ->where('page_customer_id', $pageCustomer->id)
                     ->where('message_type', 'incoming')
                     ->where('is_read', false)
                     ->update(['is_read' => true]);
             }
         }
-        
         return view('client.messages', compact('customers', 'selectedCustomer', 'messages'));
     }
 
     public function getCustomers(Request $request)
     {
-        $customers = auth('client')->user()->customers()
+        $activePageId = getActiveSessionPageId();
+        
+        if (!$activePageId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active page selected'
+            ]);
+        }
+        
+        // Get customers only from the selected page using PageCustomer table
+        $pageCustomers = \App\Models\PageCustomer::where('facebook_page_id', $activePageId)
             ->with([
-                'messages' => function($query) {
+                'customer.messages' => function($query) {
                     $query->latest()->limit(1);
                 },
-                'pageCustomers.facebookPage' // Load PageCustomer relationships
+                'facebookPage'
             ])
-            ->withCount(['messages as unread_count' => function($query) {
-                $query->where('is_read', false)->where('message_type', 'incoming');
-            }])
             ->orderBy('last_interaction', 'desc')
             ->get();
+            
+        $customers = $pageCustomers->map(function($pageCustomer) {
+            return $pageCustomer->customer;
+        })->filter();
 
         return response()->json([
             'success' => true,
-            'customers' => $customers->map(function($customer) {
+            'customers' => $pageCustomers->map(function($pageCustomer) {
+                $customer = $pageCustomer->customer;
+                if (!$customer) return null;
+                
                 $lastMessage = $customer->messages->first();
                 
-                // Get primary facebook page from PageCustomer relationships or fallback to direct relationship
-                $primaryPageCustomer = $customer->pageCustomers
-                    ->where('status', 'active')
-                    ->sortByDesc('last_interaction')
-                    ->first();
-                
-                $facebookPage = null;
-                if ($primaryPageCustomer && $primaryPageCustomer->facebookPage) {
-                    $facebookPage = [
-                        'id' => $primaryPageCustomer->facebookPage->id,
-                        'page_id' => $primaryPageCustomer->facebookPage->page_id,
-                        'page_name' => $primaryPageCustomer->facebookPage->page_name
-                    ];
-                } elseif ($customer->facebook_page) {
-                    // Fallback to direct relationship for backward compatibility
-                    $facebookPage = [
-                        'id' => $customer->facebook_page->id,
-                        'page_id' => $customer->facebook_page->page_id,
-                        'page_name' => $customer->facebook_page->page_name
-                    ];
-                }
+                // Calculate unread count for this specific page only
+                $unreadCount = \App\Models\CustomerMessage::where('customer_id', $customer->id)
+                    ->where('page_customer_id', $pageCustomer->id)
+                    ->where('is_read', false)
+                    ->where('message_type', 'incoming')
+                    ->count();
                 
                 return [
                     'id' => $customer->id,
@@ -95,45 +128,54 @@ class MessagesController extends Controller
                     'address' => $customer->address,
                     'facebook_user_id' => $customer->facebook_user_id,
                     'profile_picture' => $customer->profile_data['profile_picture'] ?? null,
-                    'unread_count' => $customer->unread_count,
-                    'last_interaction' => $customer->last_interaction ? $customer->last_interaction->diffForHumans() : null,
+                    'unread_count' => $unreadCount,
+                    'last_interaction' => $pageCustomer->last_interaction ? $pageCustomer->last_interaction->diffForHumans() : null,
                     'last_message' => $lastMessage ? [
                         'id' => $lastMessage->id,
                         'content' => \Str::limit($lastMessage->message_content, 50),
                         'time' => $lastMessage->created_at->format('M j, g:i A'),
                         'type' => $lastMessage->message_type
                     ] : null,
-                    'page_name' => $customer->profile_data['page_name'] ?? null,
-                    'facebook_page' => $facebookPage,
-                    'page_customers' => $customer->pageCustomers->map(function($pageCustomer) {
-                        return [
-                            'id' => $pageCustomer->id,
-                            'status' => $pageCustomer->status,
-                            'last_interaction' => $pageCustomer->last_interaction,
-                            'facebook_page' => $pageCustomer->facebookPage ? [
-                                'id' => $pageCustomer->facebookPage->id,
-                                'page_id' => $pageCustomer->facebookPage->page_id,
-                                'page_name' => $pageCustomer->facebookPage->page_name
-                            ] : null
-                        ];
-                    })
+                    'facebook_page' => [
+                        'id' => $pageCustomer->facebookPage->id,
+                        'page_id' => $pageCustomer->facebookPage->page_id,
+                        'page_name' => $pageCustomer->facebookPage->page_name
+                    ]
                 ];
-            })
+            })->filter()
         ]);
     }
 
     public function getMessages(Request $request, $customerId)
     {
-        $customer = auth('client')->user()->customers()->find($customerId);
+        $activePageId = getActiveSessionPageId();
         
-        if (!$customer) {
-            return response()->json(['success' => false, 'message' => 'Customer not found'], 404);
+        if (!$activePageId) {
+            return response()->json(['success' => false, 'message' => 'No active page selected'], 400);
         }
-
+        
+        // Get customer for this page only
+        $pageCustomer = \App\Models\PageCustomer::where('facebook_page_id', $activePageId)
+            ->whereHas('customer', function($query) use ($customerId) {
+                $query->where('id', $customerId);
+            })
+            ->with('customer')
+            ->first();
+        
+        if (!$pageCustomer || !$pageCustomer->customer) {
+            return response()->json(['success' => false, 'message' => 'Customer not found for this page'], 404);
+        }
+        
+        $customer = $pageCustomer->customer;
         $lastMessageId = $request->get('last_message_id', 0);
         
-        // Get messages newer than the last message ID (for auto-update)
-        $query = $customer->messages()->orderBy('created_at', 'asc');
+        // Get messages for this page - include both page-specific and legacy messages
+        $query = \App\Models\CustomerMessage::where('customer_id', $customer->id)
+            ->where(function($q) use ($pageCustomer) {
+                $q->where('page_customer_id', $pageCustomer->id)
+                  ->orWhereNull('page_customer_id'); // Include legacy messages without page_customer_id
+            })
+            ->orderBy('created_at', 'asc');
         
         if ($lastMessageId > 0) {
             $query->where('id', '>', $lastMessageId);
@@ -143,8 +185,12 @@ class MessagesController extends Controller
         
         $messages = $query->get();
         
-        // Mark incoming messages as read
-        $customer->messages()
+        // Mark incoming messages as read for this page (including legacy messages)
+        \App\Models\CustomerMessage::where('customer_id', $customer->id)
+            ->where(function($q) use ($pageCustomer) {
+                $q->where('page_customer_id', $pageCustomer->id)
+                  ->orWhereNull('page_customer_id');
+            })
             ->where('message_type', 'incoming')
             ->where('is_read', false)
             ->update(['is_read' => true]);

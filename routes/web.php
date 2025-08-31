@@ -131,6 +131,7 @@ Route::prefix('client')->name('client.')->middleware(['web', App\Http\Middleware
             Route::get('/callback', [FacebookController::class, 'callback'])->name('callback');
             Route::get('/select-pages', [FacebookController::class, 'selectPages'])->name('select-pages');
             Route::post('/connect-pages', [FacebookController::class, 'connectPages'])->name('connect-pages');
+            Route::post('/select-page', [FacebookController::class, 'selectPage'])->name('select-page');
             Route::post('/disconnect/{facebookPage}', [FacebookController::class, 'disconnect'])->name('disconnect');
             Route::post('/test/{facebookPage}', [FacebookController::class, 'testConnection'])->name('test');
             Route::post('/sync/{facebookPage}', [FacebookController::class, 'syncMessages'])->name('sync');

@@ -22,7 +22,7 @@ class FacebookGraphAPIService
         $params = [
             'client_id' => config('services.facebook.app_id'),
             'redirect_uri' => $redirectUri,
-            'scope' => 'pages_messaging,pages_read_engagement,read_page_mailboxes,pages_manage_metadata',
+            'scope' => 'pages_messaging,pages_read_engagement,read_page_mailboxes,pages_manage_metadata,public_profile',
             'response_type' => 'code',
             'state' => csrf_token()
         ];

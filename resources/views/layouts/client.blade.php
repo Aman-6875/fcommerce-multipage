@@ -466,6 +466,51 @@
             <i class="ti-close"></i>
         </div>
     </div>
+    
+    <!-- Facebook Page Switcher -->
+    @php
+        $connectedPages = auth('client')->user()->facebookPages()->where('is_connected', true)->get();
+        $selectedPageId = getActiveSessionPageId();
+        $selectedPage = $connectedPages->where('id', $selectedPageId)->first() ?? $connectedPages->first();
+        if ($selectedPage && !$selectedPageId) {
+            setActiveSessionPageId($selectedPage->id);
+        }
+    @endphp
+    
+    @if($connectedPages->count() > 0)
+    <div class="page-switcher" style="padding: 15px; border-bottom: 1px solid #e6e6e6; margin-bottom: 10px;">
+        <div style="margin-bottom: 8px;">
+            <small style="color: #888; font-size: 11px; text-transform: uppercase; font-weight: 600;">WORKING ON</small>
+        </div>
+        
+        @if($selectedPage)
+        <div class="current-page" style="display: flex; align-items: center; margin-bottom: 10px;">
+            <img src="{{ $selectedPage->page_picture ?? 'https://via.placeholder.com/32' }}" 
+                 style="width: 24px; height: 24px; border-radius: 50%; margin-right: 8px;" 
+                 alt="{{ $selectedPage->page_name }}">
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 13px; font-weight: 600; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    {{ $selectedPage->page_name }}
+                </div>
+            </div>
+        </div>
+        @endif
+        
+        @if($connectedPages->count() > 1)
+        <form method="POST" action="{{ route('client.facebook.select-page') }}" style="margin: 0;">
+            @csrf
+            <select name="page_id" class="form-control form-control-sm" style="font-size: 12px;" onchange="this.form.submit()">
+                @foreach($connectedPages as $page)
+                <option value="{{ $page->id }}" {{ $selectedPage && $selectedPage->id === $page->id ? 'selected' : '' }}>
+                    {{ Str::limit($page->page_name, 25) }}
+                </option>
+                @endforeach
+            </select>
+        </form>
+        @endif
+    </div>
+    @endif
+    
     <ul id="sidebar_menu">
         <li class="{{ request()->routeIs('client.dashboard') ? 'mm-active' : '' }}">
             <a href="{{ route('client.dashboard') }}" aria-expanded="false">
@@ -597,21 +642,6 @@
                     
                     <!-- Plan Status & Active Page Info -->
                     <div class="plan_status d-flex align-items-center">
-                        @php
-                            $connectedPages = auth('client')->user()->facebookPages()->where('is_connected', true)->get();
-                            $pageCount = $connectedPages->count();
-                        @endphp
-                        
-                        @if($pageCount > 0)
-                            <div class="alert alert-info alert-sm me-2">
-                                <i class="fab fa-facebook text-primary"></i>
-                                <strong>{{ $pageCount }}</strong> {{ __('client.connected_pages') }}
-                                @if($pageCount === 1)
-                                    <br><small>{{ $connectedPages->first()->page_name }}</small>
-                                @endif
-                            </div>
-                        @endif
-                        
                         @if(auth('client')->user()->isFree())
                             @php
                                 $trialDaysLeft = max(0, 10 - auth('client')->user()->created_at->diffInDays(now()));
