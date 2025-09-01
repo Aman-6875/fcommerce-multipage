@@ -64,7 +64,10 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
-        $this->authorize('view', $order);
+        // Check authorization manually since we're using client guard (use loose comparison for type safety)
+        if (auth('client')->id() != $order->client_id) {
+            abort(403, 'This action is unauthorized.');
+        }
         
         $order->load(['customer', 'orderMeta.product', 'facebookPage']);
         
@@ -143,7 +146,10 @@ class OrderController extends Controller
 
     public function edit(Order $order)
     {
-        $this->authorize('update', $order);
+        // Check authorization manually since we're using client guard (use loose comparison for type safety)
+        if (auth('client')->id() != $order->client_id) {
+            abort(403, 'This action is unauthorized.');
+        }
         
         if (in_array($order->status, ['shipped', 'delivered', 'cancelled'])) {
             return redirect()->route('client.orders.show', $order)
@@ -161,7 +167,10 @@ class OrderController extends Controller
 
     public function update(Request $request, Order $order)
     {
-        $this->authorize('update', $order);
+        // Check authorization manually since we're using client guard (use loose comparison for type safety)
+        if (auth('client')->id() != $order->client_id) {
+            abort(403, 'This action is unauthorized.');
+        }
         
         if (in_array($order->status, ['shipped', 'delivered', 'cancelled'])) {
             return redirect()->route('client.orders.show', $order)
@@ -206,7 +215,10 @@ class OrderController extends Controller
 
     public function updateStatus(Request $request, Order $order)
     {
-        $this->authorize('update', $order);
+        // Check authorization manually since we're using client guard (use loose comparison for type safety)
+        if (auth('client')->id() != $order->client_id) {
+            abort(403, 'This action is unauthorized.');
+        }
         
         $validated = $request->validate([
             'status' => ['required', Rule::in(['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'])],
@@ -246,7 +258,10 @@ class OrderController extends Controller
 
     public function destroy(Order $order)
     {
-        $this->authorize('delete', $order);
+        // Check authorization manually since we're using client guard (use loose comparison for type safety)
+        if (auth('client')->id() != $order->client_id) {
+            abort(403, 'This action is unauthorized.');
+        }
         
         if (!in_array($order->status, ['pending', 'cancelled'])) {
             return redirect()->route('client.orders.index')
@@ -272,7 +287,10 @@ class OrderController extends Controller
 
     public function printInvoice(Request $request, Order $order)
     {
-        $this->authorize('view', $order);
+        // Check authorization manually since we're using client guard (use loose comparison for type safety)
+        if (auth('client')->id() != $order->client_id) {
+            abort(403, 'This action is unauthorized.');
+        }
         
         $order->load(['customer', 'orderMeta.product', 'client', 'facebookPage']);
         
@@ -342,7 +360,10 @@ class OrderController extends Controller
     
     public function sendInvoiceToCustomer(Order $order)
     {
-        $this->authorize('view', $order);
+        // Check authorization manually since we're using client guard (use loose comparison for type safety)
+        if (auth('client')->id() != $order->client_id) {
+            return response()->json(['success' => false, 'message' => 'This action is unauthorized.'], 403);
+        }
         
         try {
             // Generate invoice URL
