@@ -105,7 +105,12 @@ class FacebookWebhookController extends Controller
         if ($pageCustomer) {
             // Update interaction stats
             $pageCustomer->recordInteraction();
-            return $pageCustomer->customer;
+            
+            // Check if we need to update customer profile from Facebook
+            $customer = $pageCustomer->customer;
+            $this->updateCustomerProfileIfNeeded($customer, $facebookPage);
+            
+            return $customer;
         }
 
         // Check if we have any customer with this facebook_user_id (across all pages)
@@ -118,6 +123,10 @@ class FacebookWebhookController extends Controller
             // Create page customer relationship for this page
             $pageCustomer = \App\Models\PageCustomer::findOrCreateForPage($facebookPage, $existingCustomer, $facebookUserId);
             $pageCustomer->recordInteraction();
+            
+            // Check if we need to update customer profile from Facebook
+            $this->updateCustomerProfileIfNeeded($existingCustomer, $facebookPage);
+            
             return $existingCustomer;
         }
 
@@ -544,5 +553,46 @@ class FacebookWebhookController extends Controller
         $pageCustomer = PageCustomer::findOrCreateForPage($facebookPage, $customer, $customer->facebook_user_id);
         
         return $pageCustomer->id;
+    }
+
+    /**
+     * Update customer profile from Facebook if needed
+     */
+    protected function updateCustomerProfileIfNeeded(Customer $customer, FacebookPage $facebookPage): void
+    {
+        try {
+            // Check if profile needs updating
+            $needsUpdate = false;
+            $profileData = $customer->profile_data ?? [];
+            $facebookProfile = $profileData['facebook_profile'] ?? null;
+            
+            // Update if:
+            // 1. No Facebook profile data exists
+            // 2. Name is still default "Facebook User" or empty
+            // 3. Profile data is older than 24 hours
+            if (!$facebookProfile || 
+                $customer->name === 'Facebook User' || 
+                empty($customer->name) ||
+                (isset($facebookProfile['updated_at']) && 
+                 now()->diffInHours($facebookProfile['updated_at']) > 24)) {
+                $needsUpdate = true;
+            }
+            
+            if ($needsUpdate) {
+                $facebookService = app(\App\Services\FacebookGraphAPIService::class);
+                $facebookService->updateCustomerWithFacebookProfile($customer, $facebookPage);
+                
+                Log::info('Customer profile updated from Facebook', [
+                    'customer_id' => $customer->id,
+                    'previous_name' => $customer->name
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to check/update customer profile from Facebook', [
+                'customer_id' => $customer->id,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }

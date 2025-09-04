@@ -127,6 +127,29 @@ class Client extends Authenticatable
         return $this->getTrialDaysRemaining() <= 0;
     }
 
+    /**
+     * Get the currently selected Facebook page ID for this client
+     */
+    public function getSelectedPageId(): ?int
+    {
+        // Try to get from session first
+        $selectedPageId = session('selected_facebook_page_id');
+        
+        if ($selectedPageId) {
+            // Verify the client owns this page
+            if ($this->facebookPages()->where('id', $selectedPageId)->where('is_connected', true)->exists()) {
+                return $selectedPageId;
+            }
+        }
+        
+        // If no valid selected page, return the first connected page
+        $firstConnectedPage = $this->facebookPages()
+            ->where('is_connected', true)
+            ->first();
+            
+        return $firstConnectedPage?->id;
+    }
+
     public function hasReachedFreeLimits(): bool
     {
         if ($this->isPremium()) {

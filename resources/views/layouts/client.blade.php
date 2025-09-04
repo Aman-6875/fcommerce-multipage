@@ -595,6 +595,20 @@
             </a>
         </li>
 
+        <li class="{{ request()->routeIs('client.chat-bot*') ? 'mm-active' : '' }}">
+            <a href="#" class="has-arrow" aria-expanded="false">
+                <div class="icon_menu">
+                    <i class="fas fa-comments" style="font-size: 18px; color: #43cea2;"></i>
+                </div>
+                <span>Chatbot & FAQ</span>
+            </a>
+            <ul>
+                <li><a href="{{ route('client.chat-bot.faqs.index') }}" class="{{ request()->routeIs('client.chat-bot.faqs*') ? 'mm-active' : '' }}">FAQ Management</a></li>
+                <li><a href="{{ route('client.chat-bot.settings.index') }}" class="{{ request()->routeIs('client.chat-bot.settings*') ? 'mm-active' : '' }}">Business Settings</a></li>
+                <li><a href="{{ route('client.chat-bot.inquiries.index') }}" class="{{ request()->routeIs('client.chat-bot.inquiries*') ? 'mm-active' : '' }}">Customer Inquiries</a></li>
+            </ul>
+        </li>
+
         <li class="{{ request()->routeIs('client.orders*') ? 'mm-active' : '' }}">
             <a href="{{ route('client.orders.index') }}" aria-expanded="false">
                 <div class="icon_menu">
@@ -659,11 +673,11 @@
                             @endphp
                             @if($hasReachedLimits)
                                 <div class="alert alert-danger alert-sm me-3">
-                                    <strong>Trial Expired!</strong> <a href="#" class="btn btn-sm btn-light">Upgrade Now</a>
+                                    <strong>{{ __('client.trial_expired') }}!</strong> <a href="{{ route('client.upgrade.index') }}" class="btn btn-sm btn-light">{{ __('client.upgrade_now') }}</a>
                                 </div>
                             @else
                                 <div class="alert alert-warning alert-sm me-3">
-                                    <strong>Free Trial:</strong> {{ $trialDaysLeft }} days left
+                                    <strong>{{ __('client.free_trial') }}:</strong> {{ $trialDaysLeft }} {{ __('client.days_left') }}
                                 </div>
                             @endif
                         @else
@@ -717,7 +731,7 @@
                                     <a href="{{ route('client.profile') }}">{{ __('common.profile') }}</a>
                                     <a href="{{ route('client.settings') }}">{{ __('common.settings') }}</a>
                                     @if(auth('client')->user()->isFree())
-                                        <a href="#" class="text-warning"><i class="fas fa-crown"></i> {{ __('client.upgrade_now') }}</a>
+                                        <a href="{{ route('client.upgrade.index') }}" class="text-warning"><i class="fas fa-crown"></i> {{ __('client.upgrade_now') }}</a>
                                     @endif
                                     <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">{{ __('common.logout') }}</a>
                                     <form id="logout-form" action="{{ route('client.logout') }}" method="POST" style="display: none;">
@@ -751,10 +765,10 @@
 
             @if(auth('client')->user()->hasReachedFreeLimits())
                 <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                    <h5><i class="fas fa-exclamation-triangle"></i> Upgrade Required</h5>
-                    <p>You've reached your free plan limits. Upgrade to premium to continue using all features.</p>
-                    <a href="#" class="btn btn-warning">View Plans</a>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <h5><i class="fas fa-exclamation-triangle"></i> {{ __('client.upgrade_required') }}</h5>
+                    <p>{{ __('client.free_limits_reached_message') }}</p>
+                    <a href="{{ route('client.upgrade.index') }}" class="btn btn-warning">{{ __('client.view_plans') }}</a>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ __('common.close') }}"></button>
                 </div>
             @endif
 

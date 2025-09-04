@@ -60,7 +60,7 @@ class WorkflowMessageService
                     : "Type product name or separate multiple products with commas.");
 
             case 'form':
-                $fields = $step['fields'] ?? [];
+                $fields = $step['fields'] ?? $step['config']['fields'] ?? [];
                 if (count($fields) === 1) {
                     $field = $fields[0];
                     $fieldLabel = $field['labels'][$language] ?? $field['labels']['en'] ?? $field['name'];

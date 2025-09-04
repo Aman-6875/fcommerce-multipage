@@ -146,14 +146,39 @@ class FacebookController extends Controller
                     continue;
                 }
 
-                if (FacebookPage::where('page_id', $pageId)->exists()) {
-                    $existingPage = FacebookPage::where('page_id', $pageId)->first();
+                $existingPage = FacebookPage::where('page_id', $pageId)->first();
+                if ($existingPage) {
                     if ($existingPage->client_id === $client->id) {
-                        $errors[] = __('client.facebook.page_already_connected', ['page_name' => $pageData['name']]);
+                        if ($existingPage->is_connected) {
+                            $errors[] = __('client.facebook.page_already_connected', ['page_name' => $pageData['name']]);
+                            continue;
+                        } else {
+                            // Reconnect previously disconnected page
+                            $existingPage->update([
+                                'access_token' => $pageData['access_token'],
+                                'page_name' => $pageData['name'], // Update in case name changed
+                                'page_data' => [
+                                    'category' => $pageData['category'] ?? null,
+                                    'picture' => $pageData['picture']['data']['url'] ?? null,
+                                    'tasks' => $pageData['tasks'] ?? []
+                                ],
+                                'is_connected' => false // Will be set to true after webhook setup
+                            ]);
+                            
+                            if ($this->setupPageWebhooks($existingPage)) {
+                                $existingPage->update(['is_connected' => true]);
+                                $connectedCount++;
+                                Log::info('Successfully reconnected page', ['page_id' => $pageId, 'client_id' => $client->id]);
+                            } else {
+                                $errors[] = __('client.facebook.webhook_setup_failed', ['page_name' => $pageData['name']]);
+                                Log::error('Webhook setup failed for reconnected page', ['page_id' => $pageId, 'client_id' => $client->id]);
+                            }
+                            continue;
+                        }
                     } else {
                         $errors[] = __('client.facebook.page_connected_to_another_client', ['page_name' => $pageData['name']]);
+                        continue;
                     }
-                    continue;
                 }
 
                 $facebookPage = FacebookPage::create([

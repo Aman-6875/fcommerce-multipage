@@ -216,7 +216,7 @@ class WorkflowEngine
     private function handleChoiceStep(ConversationState $conversation, string $input): array
     {
         $step = $conversation->getCurrentStep();
-        $choices = $step['choices'] ?? [];
+        $choices = $step['choices'] ?? $step['config']['choices'] ?? [];
         $language = $conversation->language;
 
         $selectedChoice = $this->findChoice($input, $choices, $language);
@@ -852,7 +852,7 @@ class WorkflowEngine
     private function handleFormStepEnhanced(ConversationState $conversation, string $input): array
     {
         $step = $conversation->getCurrentStep();
-        $fields = $step['fields'] ?? [];
+        $fields = $step['fields'] ?? $step['config']['fields'] ?? [];
         $language = $conversation->language;
 
         // Replace placeholders in step labels with context
@@ -1154,7 +1154,7 @@ class WorkflowEngine
         $customer = $conversation->customer;
         $facebookPage = $conversation->facebookPage;
         $language = $conversation->language;
-        $choices = $step['choices'] ?? [];
+        $choices = $step['choices'] ?? $step['config']['choices'] ?? [];
         
         if (!$facebookPage || !$facebookPage->access_token) {
             return;

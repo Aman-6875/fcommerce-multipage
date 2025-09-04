@@ -31,7 +31,7 @@
                                 ]) }}
                                 
                                 @if(!auth('client')->user()->isPremium())
-                                    <a href="#" class="alert-link">{{ __('client.facebook.upgrade_for_more') }}</a>
+                                    <a href="{{ route('client.upgrade.index') }}" class="alert-link">{{ __('client.facebook.upgrade_for_more') }}</a>
                                 @endif
                             </div>
                         </div>
@@ -105,25 +105,84 @@
                                             <div class="d-flex gap-2">
                                                 <form method="POST" action="{{ route('client.facebook.test', $page) }}" style="display: inline;">
                                                     @csrf
-                                                    <button type="submit" class="btn btn-outline-primary btn-sm">
-                                                        <i class="fa fa-sync"></i> {{ __('client.facebook.test_connection') }}
+                                                    <button type="submit" class="btn btn-outline-primary btn-sm" id="test-btn-{{ $page->id }}">
+                                                        <i class="fa fa-sync"></i> 
+                                                        <span class="btn-text">{{ __('client.facebook.test_connection') }}</span>
+                                                        <span class="spinner-border spinner-border-sm d-none" role="status"></span>
                                                     </button>
                                                 </form>
                                                 
-                                                <form method="POST" action="{{ route('client.facebook.disconnect', $page) }}" 
-                                                      onsubmit="return confirm('{{ __('client.facebook.confirm_disconnect') }}')"
-                                                      style="display: inline;">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-outline-danger btn-sm">
-                                                        <i class="fa fa-unlink"></i> {{ __('client.facebook.disconnect') }}
-                                                    </button>
-                                                </form>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#disconnectModal{{ $page->id }}">
+                                                    <i class="fa fa-unlink"></i> {{ __('client.facebook.disconnect') }}
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             @endforeach
                         </div>
+                        
+                        <!-- Disconnect Modals -->
+                        @foreach($facebookPages as $page)
+                            <div class="modal fade" id="disconnectModal{{ $page->id }}" tabindex="-1" aria-labelledby="disconnectModalLabel{{ $page->id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="disconnectModalLabel{{ $page->id }}">
+                                                <i class="fa fa-exclamation-triangle text-warning"></i>
+                                                {{ __('client.facebook.confirm_disconnect_title') }}
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                @if($page->getProfilePicture())
+                                                    <img src="{{ $page->getProfilePicture() }}" 
+                                                         alt="{{ $page->page_name }}" 
+                                                         class="rounded-circle me-3"
+                                                         style="width: 40px; height: 40px; object-fit: cover;">
+                                                @else
+                                                    <div class="bg-secondary rounded-circle me-3 d-flex align-items-center justify-content-center"
+                                                         style="width: 40px; height: 40px;">
+                                                        <i class="fa fa-facebook text-white"></i>
+                                                    </div>
+                                                @endif
+                                                <div>
+                                                    <strong>{{ $page->page_name }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">{{ $page->page_id }}</small>
+                                                </div>
+                                            </div>
+                                            
+                                            <p>{{ __('client.facebook.disconnect_warning', ['page_name' => $page->page_name]) }}</p>
+                                            
+                                            <div class="alert alert-warning">
+                                                <i class="fa fa-info-circle"></i>
+                                                <strong>{{ __('common.note') }}:</strong>
+                                                <ul class="mb-0 mt-2">
+                                                    <li>{{ __('client.facebook.disconnect_note_1') }}</li>
+                                                    <li>{{ __('client.facebook.disconnect_note_2') }}</li>
+                                                    <li>{{ __('client.facebook.disconnect_note_3') }}</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                <i class="fa fa-times"></i> {{ __('common.cancel') }}
+                                            </button>
+                                            <form method="POST" action="{{ route('client.facebook.disconnect', $page) }}" style="display: inline;">
+                                                @csrf
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="fa fa-unlink"></i> {{ __('client.facebook.disconnect_confirm') }}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
                     @else
                         <!-- No Pages Connected -->
                         <div class="text-center py-5">
@@ -169,6 +228,24 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
+    // Handle test connection button loading state
+    $('form[action*="facebook/test"]').on('submit', function() {
+        var $btn = $(this).find('button[type="submit"]');
+        var $btnText = $btn.find('.btn-text');
+        var $spinner = $btn.find('.spinner-border');
+        
+        $btn.prop('disabled', true);
+        $btnText.addClass('d-none');
+        $spinner.removeClass('d-none');
+        
+        // Reset button state after 10 seconds (in case of timeout)
+        setTimeout(function() {
+            $btn.prop('disabled', false);
+            $btnText.removeClass('d-none');
+            $spinner.addClass('d-none');
+        }, 10000);
+    });
+    
     // Auto-refresh page status every 30 seconds for connected pages
     @if($facebookPages->count() > 0)
     setInterval(function() {

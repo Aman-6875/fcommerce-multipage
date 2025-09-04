@@ -26,7 +26,7 @@
                             @endif
                         </div>
                     </div>
-                    <a href="#" class="btn text-white mb-2" style="background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3); backdrop-filter: blur(10px); transition: all 0.3s ease;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                    <a href="{{ route('client.upgrade.index') }}" class="btn text-white mb-2" style="background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3); backdrop-filter: blur(10px); transition: all 0.3s ease;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
                         <i class="fas fa-crown mr-2"></i>{{ __('client.upgrade_now') }}
                     </a>
                 </div>
@@ -259,7 +259,7 @@
                         <i class="fas fa-robot mr-2"></i> {{ __('client.setup_automation') }}
                     </a>
                 @else
-                    <a href="#" class="btn btn-block" style="background: linear-gradient(135deg, #e2e8f0, #cbd5e0); color: #718096; border-radius: 12px; padding: 12px 20px; border: none; transition: all 0.3s ease; text-decoration: none;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                    <a href="{{ route('client.upgrade.index') }}" class="btn btn-block" style="background: linear-gradient(135deg, #e2e8f0, #cbd5e0); color: #718096; border-radius: 12px; padding: 12px 20px; border: none; transition: all 0.3s ease; text-decoration: none;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
                         <i class="fas fa-crown mr-2"></i> {{ __('client.unlock_automation') }}
                     </a>
                 @endif

@@ -180,7 +180,7 @@
                                     <strong>{{ __('client.free_plan_limit') }}:</strong> 
                                     {{ auth('client')->user()->customers()->count() }}/20 {{ __('client.customers') }}
                                     @if(auth('client')->user()->customers()->count() >= 20)
-                                        <a href="#" class="alert-link">{{ __('client.upgrade_for_unlimited') }}</a>
+                                        <a href="{{ route('client.upgrade.index') }}" class="alert-link">{{ __('client.upgrade_for_unlimited') }}</a>
                                     @endif
                                 </div>
                             </div>

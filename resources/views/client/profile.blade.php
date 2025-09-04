@@ -85,7 +85,7 @@
                                 <strong>{{ __('client.messages') }}:</strong> {{ auth('client')->user()->customers()->sum('interaction_count') }}/50
                             </small>
                         </div>
-                        <a href="#" class="btn btn-warning btn-sm w-100">{{ __('client.upgrade_now') }}</a>
+                        <a href="{{ route('client.upgrade.index') }}" class="btn btn-warning btn-sm w-100">{{ __('client.upgrade_now') }}</a>
                     @else
                         <div class="alert alert-success">
                             <small>

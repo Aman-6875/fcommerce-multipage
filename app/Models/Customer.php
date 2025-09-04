@@ -126,4 +126,35 @@ class Customer extends Model
             'first_interaction' => $this->first_interaction ?? now(),
         ]);
     }
+
+    /**
+     * Get customer's Facebook profile picture URL
+     */
+    public function getFacebookProfilePicture(): ?string
+    {
+        $profileData = $this->profile_data ?? [];
+        $facebookProfile = $profileData['facebook_profile'] ?? null;
+        
+        return $facebookProfile['profile_pic'] ?? null;
+    }
+
+    /**
+     * Get customer's Facebook name
+     */
+    public function getFacebookName(): ?string
+    {
+        $profileData = $this->profile_data ?? [];
+        $facebookProfile = $profileData['facebook_profile'] ?? null;
+        
+        return $facebookProfile['name'] ?? null;
+    }
+
+    /**
+     * Check if customer has Facebook profile data
+     */
+    public function hasFacebookProfile(): bool
+    {
+        $profileData = $this->profile_data ?? [];
+        return isset($profileData['facebook_profile']);
+    }
 }

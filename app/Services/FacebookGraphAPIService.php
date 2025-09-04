@@ -480,6 +480,11 @@ class FacebookGraphAPIService
     {
         try {
             if (!$customer->facebook_user_id || !$facebookPage->access_token) {
+                Log::warning('Cannot update customer profile - missing facebook_user_id or access_token', [
+                    'customer_id' => $customer->id,
+                    'has_facebook_user_id' => !empty($customer->facebook_user_id),
+                    'has_access_token' => !empty($facebookPage->access_token)
+                ]);
                 return;
             }
 
@@ -488,19 +493,24 @@ class FacebookGraphAPIService
             if ($profile) {
                 $updateData = [];
                 
-                // Only update name if it's still default "Facebook User"
-                if (($customer->name === 'Facebook User' || empty($customer->name)) && !empty($profile['name'])) {
+                // Always update name if we have a better one from Facebook
+                if (!empty($profile['name']) && 
+                    ($customer->name === 'Facebook User' || 
+                     empty($customer->name) || 
+                     $customer->name === 'Anonymous')) {
                     $updateData['name'] = $profile['name'];
                 }
                 
-                // Update profile data
+                // Update profile data - always update to get latest info
                 $profileData = $customer->profile_data ?? [];
                 $profileData['facebook_profile'] = [
+                    'id' => $profile['id'] ?? $customer->facebook_user_id,
                     'name' => $profile['name'] ?? null,
                     'first_name' => $profile['first_name'] ?? null,
                     'last_name' => $profile['last_name'] ?? null,
                     'profile_pic' => $profile['profile_pic'] ?? null,
-                    'updated_at' => now()->toISOString()
+                    'updated_at' => now()->toISOString(),
+                    'page_id' => $facebookPage->page_id // Track which page this profile came from
                 ];
                 $updateData['profile_data'] = $profileData;
                 
@@ -509,14 +519,23 @@ class FacebookGraphAPIService
                     
                     Log::info('Customer updated with Facebook profile', [
                         'customer_id' => $customer->id,
-                        'facebook_name' => $profile['name'] ?? 'Unknown'
+                        'old_name' => $customer->name,
+                        'facebook_name' => $profile['name'] ?? 'Unknown',
+                        'has_profile_pic' => !empty($profile['profile_pic'])
                     ]);
                 }
+            } else {
+                Log::warning('No Facebook profile data returned for customer', [
+                    'customer_id' => $customer->id,
+                    'facebook_user_id' => $customer->facebook_user_id
+                ]);
             }
             
         } catch (\Exception $e) {
             Log::error('Failed to update customer with Facebook profile', [
                 'customer_id' => $customer->id,
+                'facebook_user_id' => $customer->facebook_user_id,
+                'page_id' => $facebookPage->page_id,
                 'error' => $e->getMessage()
             ]);
         }

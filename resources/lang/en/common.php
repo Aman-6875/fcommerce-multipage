@@ -99,4 +99,5 @@ return [
     'confirmed_at' => 'Confirmed At',
     'never' => 'Never',
     'back' => 'Back',
+    'note' => 'Note',
 ];

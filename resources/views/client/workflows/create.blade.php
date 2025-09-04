@@ -254,6 +254,31 @@
             </div>
         </div>
     </div>
+    
+    <!-- Info Display Template -->
+    <div class="step-template" data-type="info_display">
+        <div class="step-card card mb-3" data-step-index="0">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-info-circle text-secondary me-2"></i>
+                    <strong>Welcome Message</strong>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="editStep(this)">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeStep(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="step-config">
+                    <!-- Step configuration will be filled here -->
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @push('styles')
@@ -285,6 +310,10 @@
 
 .step-card[data-type="confirmation"] {
     border-left-color: #17a2b8;
+}
+
+.step-card[data-type="info_display"] {
+    border-left-color: #6c757d;
 }
 
 .sortable-ghost {
@@ -369,6 +398,13 @@ function showStepTypeSelector() {
                                     <small class="text-muted">Final order confirmation</small>
                                 </button>
                             </div>
+                            <div class="col-md-6 mb-3">
+                                <button type="button" class="btn btn-outline-secondary w-100 h-100 p-4" onclick="createStep('info_display')">
+                                    <i class="fas fa-info-circle mb-2" style="font-size: 2rem;"></i>
+                                    <div><strong>Welcome Message</strong></div>
+                                    <small class="text-muted">Display information to customer</small>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -424,6 +460,10 @@ function getDefaultTitle(type, language) {
         confirmation: {
             en: 'Confirm Order',
             bn: 'অর্ডার নিশ্চিত করুন'
+        },
+        info_display: {
+            en: 'Welcome Message',
+            bn: 'স্বাগতম বার্তা'
         }
     };
     
@@ -453,6 +493,9 @@ function getDefaultConfig(type) {
         },
         confirmation: {
             show_summary: true
+        },
+        info_display: {
+            auto_continue: false
         }
     };
     
@@ -513,6 +556,13 @@ function getStepConfigPreview(stepData) {
                     ${config.show_summary ? 'With order summary' : 'Simple confirmation'}
                 </div>
             `;
+        case 'info_display':
+            return `
+                <div class="small text-muted">
+                    <i class="fas fa-cog me-1"></i>
+                    ${config.auto_continue ? 'Auto-continue' : 'Wait for customer input'}
+                </div>
+            `;
         default:
             return '';
     }
@@ -525,6 +575,390 @@ function editStep(button) {
     
     // Show step editor modal (implement based on step type)
     showStepEditor(stepData, stepIndex);
+}
+
+function showStepEditor(stepData, stepIndex) {
+    const modalId = 'stepEditorModal';
+    const existingModal = document.getElementById(modalId);
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    let modalContent = '';
+    
+    switch (stepData.type) {
+        case 'info_display':
+            modalContent = createInfoDisplayEditor(stepData, stepIndex);
+            break;
+        case 'form':
+            modalContent = createFormEditor(stepData, stepIndex);
+            break;
+        case 'choice':
+            modalContent = createChoiceEditor(stepData, stepIndex);
+            break;
+        case 'product_selector':
+            modalContent = createProductSelectorEditor(stepData, stepIndex);
+            break;
+        case 'confirmation':
+            modalContent = createConfirmationEditor(stepData, stepIndex);
+            break;
+        default:
+            modalContent = createGenericEditor(stepData, stepIndex);
+    }
+    
+    const modal = `
+        <div class="modal fade" id="${modalId}" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    ${modalContent}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modal);
+    const modalEl = new bootstrap.Modal(document.getElementById(modalId));
+    modalEl.show();
+    
+    // Remove modal after hiding
+    document.getElementById(modalId).addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+function createInfoDisplayEditor(stepData, stepIndex) {
+    return `
+        <div class="modal-header">
+            <h5 class="modal-title">
+                <i class="fas fa-info-circle me-2"></i>Edit Welcome Message
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <form id="stepEditorForm">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Title (English)</label>
+                        <input type="text" class="form-control" name="title_en" value="${stepData.labels.en.title || ''}" placeholder="Welcome to Our Store">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Title (বাংলা)</label>
+                        <input type="text" class="form-control" name="title_bn" value="${stepData.labels.bn?.title || ''}" placeholder="আমাদের দোকানে স্বাগতম">
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Message (English)</label>
+                        <textarea class="form-control" name="description_en" rows="4" placeholder="Hi! Welcome to our software company. How can we help you?">${stepData.labels.en.description || ''}</textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Message (বাংলা)</label>
+                        <textarea class="form-control" name="description_bn" rows="4" placeholder="হাই! আমাদের সফটওয়্যার কোম্পানিতে স্বাগতম।">${stepData.labels.bn?.description || ''}</textarea>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="auto_continue" ${stepData.config?.auto_continue ? 'checked' : ''}>
+                        <label class="form-check-label">Auto-continue to next step</label>
+                    </div>
+                    <small class="form-text text-muted">If unchecked, customer needs to type something to continue</small>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveStepChanges(${stepIndex})">Save Changes</button>
+        </div>
+    `;
+}
+
+function createChoiceEditor(stepData, stepIndex) {
+    const choices = stepData.config?.choices || [];
+    
+    let choicesHtml = '';
+    choices.forEach((choice, index) => {
+        choicesHtml += `
+            <div class="choice-item border p-3 mb-2" data-choice-index="${index}">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>Choice ${index + 1}</strong>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeChoice(${index})">Remove</button>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="choice_${index}_en" value="${choice.labels?.en || ''}" placeholder="English label">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="choice_${index}_bn" value="${choice.labels?.bn || ''}" placeholder="বাংলা label">
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    return `
+        <div class="modal-header">
+            <h5 class="modal-title">
+                <i class="fas fa-list-ul me-2"></i>Edit Multiple Choice
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <form id="stepEditorForm">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Question (English)</label>
+                        <input type="text" class="form-control" name="title_en" value="${stepData.labels.en.title || ''}" placeholder="What service interests you?">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Question (বাংলা)</label>
+                        <input type="text" class="form-control" name="title_bn" value="${stepData.labels.bn?.title || ''}" placeholder="কোন সেবায় আগ্রহী?">
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Choices</label>
+                    <div id="choicesContainer">
+                        ${choicesHtml}
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="addChoice()">
+                        <i class="fas fa-plus me-1"></i>Add Choice
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveStepChanges(${stepIndex})">Save Changes</button>
+        </div>
+    `;
+}
+
+function createFormEditor(stepData, stepIndex) {
+    const fields = stepData.config?.fields || [];
+    
+    let fieldsHtml = '';
+    fields.forEach((field, index) => {
+        fieldsHtml += `
+            <div class="field-item border p-3 mb-2" data-field-index="${index}">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>Field ${index + 1}</strong>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeField(${index})">Remove</button>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">
+                        <select class="form-select" name="field_${index}_type">
+                            <option value="text" ${field.type === 'text' ? 'selected' : ''}>Text</option>
+                            <option value="email" ${field.type === 'email' ? 'selected' : ''}>Email</option>
+                            <option value="tel" ${field.type === 'tel' ? 'selected' : ''}>Phone</option>
+                            <option value="textarea" ${field.type === 'textarea' ? 'selected' : ''}>Textarea</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" name="field_${index}_name" value="${field.name || ''}" placeholder="Field name">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" name="field_${index}_label_en" value="${field.labels?.en || ''}" placeholder="English label">
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" name="field_${index}_required" ${field.required ? 'checked' : ''}>
+                            <label class="form-check-label">Required</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    return `
+        <div class="modal-header">
+            <h5 class="modal-title">
+                <i class="fas fa-wpforms me-2"></i>Edit Form
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <form id="stepEditorForm">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Form Title (English)</label>
+                        <input type="text" class="form-control" name="title_en" value="${stepData.labels.en.title || ''}" placeholder="Customer Information">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Form Title (বাংলা)</label>
+                        <input type="text" class="form-control" name="title_bn" value="${stepData.labels.bn?.title || ''}" placeholder="গ্রাহকের তথ্য">
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Form Fields</label>
+                    <div id="fieldsContainer">
+                        ${fieldsHtml}
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="addField()">
+                        <i class="fas fa-plus me-1"></i>Add Field
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveStepChanges(${stepIndex})">Save Changes</button>
+        </div>
+    `;
+}
+
+function createGenericEditor(stepData, stepIndex) {
+    return createInfoDisplayEditor(stepData, stepIndex);
+}
+
+function createProductSelectorEditor(stepData, stepIndex) {
+    return createGenericEditor(stepData, stepIndex);
+}
+
+function createConfirmationEditor(stepData, stepIndex) {
+    return createGenericEditor(stepData, stepIndex);
+}
+
+function saveStepChanges(stepIndex) {
+    const form = document.getElementById('stepEditorForm');
+    const formData = new FormData(form);
+    const stepData = workflowSteps[stepIndex];
+    
+    // Update step data based on step type
+    if (stepData.type === 'info_display') {
+        stepData.labels.en.title = formData.get('title_en') || '';
+        stepData.labels.en.description = formData.get('description_en') || '';
+        stepData.labels.bn = stepData.labels.bn || {};
+        stepData.labels.bn.title = formData.get('title_bn') || '';
+        stepData.labels.bn.description = formData.get('description_bn') || '';
+        stepData.config.auto_continue = formData.get('auto_continue') === 'on';
+    }
+    else if (stepData.type === 'choice') {
+        stepData.labels.en.title = formData.get('title_en') || '';
+        stepData.labels.bn = stepData.labels.bn || {};
+        stepData.labels.bn.title = formData.get('title_bn') || '';
+        
+        // Save choices
+        const choices = [];
+        let choiceIndex = 0;
+        while (formData.get(`choice_${choiceIndex}_en`)) {
+            choices.push({
+                id: `choice_${choiceIndex + 1}`,
+                labels: {
+                    en: formData.get(`choice_${choiceIndex}_en`),
+                    bn: formData.get(`choice_${choiceIndex}_bn`) || ''
+                }
+            });
+            choiceIndex++;
+        }
+        stepData.config.choices = choices;
+    }
+    else if (stepData.type === 'form') {
+        stepData.labels.en.title = formData.get('title_en') || '';
+        stepData.labels.bn = stepData.labels.bn || {};
+        stepData.labels.bn.title = formData.get('title_bn') || '';
+        
+        // Save fields
+        const fields = [];
+        let fieldIndex = 0;
+        while (formData.get(`field_${fieldIndex}_name`)) {
+            fields.push({
+                name: formData.get(`field_${fieldIndex}_name`),
+                type: formData.get(`field_${fieldIndex}_type`),
+                required: formData.get(`field_${fieldIndex}_required`) === 'on',
+                labels: {
+                    en: formData.get(`field_${fieldIndex}_label_en`),
+                    bn: formData.get(`field_${fieldIndex}_label_bn`) || ''
+                }
+            });
+            fieldIndex++;
+        }
+        stepData.config.fields = fields;
+    }
+    
+    // Re-render the step
+    const stepCard = document.querySelector(`[data-step-index="${stepIndex}"]`);
+    stepCard.querySelector('strong').textContent = stepData.labels.en.title;
+    stepCard.querySelector('.step-config').innerHTML = getStepConfigPreview(stepData);
+    
+    // Update workflow definition
+    updateWorkflowDefinition();
+    
+    // Close modal
+    bootstrap.Modal.getInstance(document.getElementById('stepEditorModal')).hide();
+}
+
+function addChoice() {
+    const container = document.getElementById('choicesContainer');
+    const choiceIndex = container.children.length;
+    
+    const choiceHtml = `
+        <div class="choice-item border p-3 mb-2" data-choice-index="${choiceIndex}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <strong>Choice ${choiceIndex + 1}</strong>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeChoice(${choiceIndex})">Remove</button>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" name="choice_${choiceIndex}_en" placeholder="English label">
+                </div>
+                <div class="col-md-6">
+                    <input type="text" class="form-control" name="choice_${choiceIndex}_bn" placeholder="বাংলা label">
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', choiceHtml);
+}
+
+function removeChoice(index) {
+    document.querySelector(`[data-choice-index="${index}"]`).remove();
+}
+
+function addField() {
+    const container = document.getElementById('fieldsContainer');
+    const fieldIndex = container.children.length;
+    
+    const fieldHtml = `
+        <div class="field-item border p-3 mb-2" data-field-index="${fieldIndex}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <strong>Field ${fieldIndex + 1}</strong>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeField(${fieldIndex})">Remove</button>
+            </div>
+            <div class="row">
+                <div class="col-md-3">
+                    <select class="form-select" name="field_${fieldIndex}_type">
+                        <option value="text">Text</option>
+                        <option value="email">Email</option>
+                        <option value="tel">Phone</option>
+                        <option value="textarea">Textarea</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="field_${fieldIndex}_name" placeholder="Field name">
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="field_${fieldIndex}_label_en" placeholder="English label">
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="field_${fieldIndex}_required">
+                        <label class="form-check-label">Required</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', fieldHtml);
+}
+
+function removeField(index) {
+    document.querySelector(`[data-field-index="${index}"]`).remove();
 }
 
 function removeStep(button) {

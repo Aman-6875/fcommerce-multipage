@@ -1,0 +1,122 @@
+{
+  "steps": [
+    {
+      "id": "welcome",
+      "type": "info_display",
+      "labels": {
+        "en": {
+          "title": "Welcome to TechCorp!",
+          "description": "👋 Hi! We're a software company. How can we help you today?"
+        },
+        "bn": {
+          "title": "টেককর্পে স্বাগতম!",
+          "description": "👋 হ্যালো! আমরা একটি সফটওয়্যার কোম্পানি।"
+        }
+      },
+      "config": {
+        "auto_continue": false
+      }
+    },
+    {
+      "id": "services",
+      "type": "choice",
+      "labels": {
+        "en": {
+          "title": "Our Services",
+          "description": "What service interests you?"
+        },
+        "bn": {
+          "title": "আমাদের সেবা",
+          "description": "কোন সেবায় আগ্রহী?"
+        }
+      },
+      "config": {
+        "choices": [
+          {
+            "id": "web_dev",
+            "labels": {
+              "en": "🌐 Web Development",
+              "bn": "🌐 ওয়েব ডেভেলপমেন্ট"
+            }
+          },
+          {
+            "id": "mobile_app",
+            "labels": {
+              "en": "📱 Mobile Apps",
+              "bn": "📱 মোবাইল অ্যাপ"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "customer_info",
+      "type": "form",
+      "labels": {
+        "en": {
+          "title": "Your Information",
+          "description": "Please provide your contact details:",
+          "success": "✅ Information saved!"
+        },
+        "bn": {
+          "title": "আপনার তথ্য",
+          "description": "যোগাযোগের তথ্য দিন:",
+          "success": "✅ তথ্য সংরক্ষিত!"
+        }
+      },
+      "config": {
+        "fields": [
+          {
+            "name": "name",
+            "type": "text",
+            "required": true,
+            "labels": {
+              "en": "Full Name",
+              "bn": "পূর্ণ নাম"
+            }
+          },
+          {
+            "name": "phone",
+            "type": "tel",
+            "required": true,
+            "labels": {
+              "en": "Phone Number",
+              "bn": "মোবাইল নম্বর"
+            }
+          },
+          {
+            "name": "email",
+            "type": "email",
+            "required": true,
+            "labels": {
+              "en": "Email Address",
+              "bn": "ইমেইল ঠিকানা"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "confirmation",
+      "type": "confirmation",
+      "labels": {
+        "en": {
+          "title": "Submit Inquiry",
+          "description": "Review your information and submit your service inquiry.",
+          "confirm_button": "✅ Submit",
+          "cancel_button": "❌ Cancel"
+        },
+        "bn": {
+          "title": "অনুসন্ধান জমা দিন",
+          "description": "তথ্য পর্যালোচনা করে অনুসন্ধান জমা দিন।",
+          "confirm_button": "✅ জমা দিন",
+          "cancel_button": "❌ বাতিল"
+        }
+      },
+      "config": {
+        "show_summary": true,
+        "show_customer_info": true
+      }
+    }
+  ]
+}
