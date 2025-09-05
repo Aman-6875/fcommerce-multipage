@@ -363,13 +363,24 @@ class NotificationService
             return false;
         }
         
+        $invoiceSent = false;
+        
         // Check if we can send a regular message (within 24 hours of last customer interaction)
         if ($this->canSendRegularMessage($order->customer)) {
-            return $this->sendInvoiceMessage($order, $message, $invoiceUrl);
+            $invoiceSent = $this->sendInvoiceMessage($order, $message, $invoiceUrl);
         }
         
-        // If we can't send regular message, try alternative approaches
-        return $this->sendAlternativeInvoiceNotification($order, $message, $invoiceUrl);
+        // If we can't send regular message or it failed, try alternative approaches
+        if (!$invoiceSent) {
+            $invoiceSent = $this->sendAlternativeInvoiceNotification($order, $message, $invoiceUrl);
+            
+            // If alternative method succeeded, create CustomerMessage so client can see it
+            if ($invoiceSent) {
+                $this->createInvoiceMessage($order, $message, $invoiceUrl);
+            }
+        }
+        
+        return $invoiceSent;
     }
     
     private function sendInvoiceMessage(Order $order, string $message, string $invoiceUrl): bool
@@ -424,7 +435,7 @@ class NotificationService
             if ($response) {
                 $this->logNotification($order->id, 'invoice_sent', 'sent', $message);
                 
-                // Also create a CustomerMessage record so it appears in the chat
+                // Create a CustomerMessage record so it appears in the chat
                 $this->createInvoiceMessage($order, $message, $invoiceUrl);
                 
                 return true;

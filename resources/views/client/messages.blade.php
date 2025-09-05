@@ -1231,8 +1231,8 @@ $(document).ready(function() {
         loadMessages(customerId);
     }
     
-    // Load messages
-    function loadMessages(customerId, update = false) {
+    // Load messages (make it globally accessible)
+    window.loadMessages = function(customerId, update = false) {
         const url = `/client/api/messages/${customerId}`;
         const params = update && lastMessageId > 0 ? `?last_message_id=${lastMessageId}` : '';
         
@@ -2338,7 +2338,7 @@ function sendInvoiceToCustomer(orderId) {
                 // Refresh messages to show the sent invoice (small delay to ensure DB commit)
                 setTimeout(() => {
                     if (selectedCustomerId) {
-                        loadMessages(selectedCustomerId);
+                        window.loadMessages(selectedCustomerId);
                     }
                 }, 200);
             } else {
@@ -2464,7 +2464,7 @@ function sendSelectedProducts() {
         $('#productModal').modal('hide');
         showNotification('Products sent successfully!', 'success');
         // Refresh messages to show the sent product carousel
-        loadMessages(selectedCustomerId);
+        window.loadMessages(selectedCustomerId);
     })
     .fail(function(xhr) {
         showNotification('Failed to send products', 'error');
