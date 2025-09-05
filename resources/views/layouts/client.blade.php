@@ -494,8 +494,11 @@
         </div>
         
         @if($selectedPage)
+        @php
+            $pagePicture = $selectedPage->page_data['picture'] ?? 'https://via.placeholder.com/32';
+        @endphp
         <div class="current-page" style="display: flex; align-items: center; margin-bottom: 10px;">
-            <img src="{{ $selectedPage->page_picture ?? 'https://via.placeholder.com/32' }}" 
+            <img src="{{ $pagePicture }}" 
                  style="width: 24px; height: 24px; border-radius: 50%; margin-right: 8px;" 
                  alt="{{ $selectedPage->page_name }}">
             <div style="flex: 1; min-width: 0;">
@@ -593,20 +596,6 @@
                     <span class="badge badge-success">{{ $activeWorkflows }}</span>
                 @endif
             </a>
-        </li>
-
-        <li class="{{ request()->routeIs('client.chat-bot*') ? 'mm-active' : '' }}">
-            <a href="#" class="has-arrow" aria-expanded="false">
-                <div class="icon_menu">
-                    <i class="fas fa-comments" style="font-size: 18px; color: #43cea2;"></i>
-                </div>
-                <span>Chatbot & FAQ</span>
-            </a>
-            <ul>
-                <li><a href="{{ route('client.chat-bot.faqs.index') }}" class="{{ request()->routeIs('client.chat-bot.faqs*') ? 'mm-active' : '' }}">FAQ Management</a></li>
-                <li><a href="{{ route('client.chat-bot.settings.index') }}" class="{{ request()->routeIs('client.chat-bot.settings*') ? 'mm-active' : '' }}">Business Settings</a></li>
-                <li><a href="{{ route('client.chat-bot.inquiries.index') }}" class="{{ request()->routeIs('client.chat-bot.inquiries*') ? 'mm-active' : '' }}">Customer Inquiries</a></li>
-            </ul>
         </li>
 
         <li class="{{ request()->routeIs('client.orders*') ? 'mm-active' : '' }}">

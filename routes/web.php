@@ -69,7 +69,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', App\Http\Middleware\S
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
         Route::get('/search', [DashboardController::class, 'search'])->name('search');
-        
+
         // Admin user management (super admin only)
         Route::get('/register', [AdminAuthController::class, 'showRegistrationForm'])->name('register');
         Route::post('/register', [AdminAuthController::class, 'register']);
@@ -107,8 +107,12 @@ Route::prefix('admin')->name('admin.')->middleware(['web', App\Http\Middleware\S
 
         // Service Management Routes (to be implemented)
         Route::prefix('services')->name('services.')->group(function () {
-            Route::get('/', function() { return view('admin.services.index'); })->name('index');
-            Route::get('/calendar', function() { return view('admin.services.calendar'); })->name('calendar');
+            Route::get('/', function () {
+                return view('admin.services.index');
+            })->name('index');
+            Route::get('/calendar', function () {
+                return view('admin.services.calendar');
+            })->name('calendar');
         });
 
         // Reports Routes
@@ -147,7 +151,7 @@ Route::prefix('client')->name('client.')->middleware(['web', App\Http\Middleware
     Route::middleware('auth:client')->group(function () {
         Route::get('/dashboard', [ClientDashboardController::class, 'index'])->name('dashboard');
         Route::post('/logout', [ClientAuthController::class, 'logout'])->name('logout');
-        
+
         // Facebook Pages Management
         Route::prefix('facebook')->name('facebook.')->group(function () {
             Route::get('/', [FacebookController::class, 'index'])->name('index');
@@ -161,19 +165,19 @@ Route::prefix('client')->name('client.')->middleware(['web', App\Http\Middleware
             Route::post('/sync/{facebookPage}', [FacebookController::class, 'syncMessages'])->name('sync');
             Route::post('/sync-customer/{facebookPage}/{customer}', [FacebookController::class, 'syncCustomerMessages'])->name('sync-customer');
         });
-        
+
         // Client features
-        Route::get('/profile', function() { 
-            return view('client.profile'); 
+        Route::get('/profile', function () {
+            return view('client.profile');
         })->name('profile');
-        
+
         Route::get('/facebook-pages', [FacebookController::class, 'index'])->name('facebook-pages'); // Backward compatibility
-        
-        Route::get('/customers', function() { 
+
+        Route::get('/customers', function () {
             $customers = collect(); // Customers will be loaded via the relationship once defined
-            return view('client.customers', compact('customers')); 
+            return view('client.customers', compact('customers'));
         })->name('customers');
-        
+
         // Messages routes
         Route::get('/messages/{customer?}', [\App\Http\Controllers\Client\MessagesController::class, 'index'])->name('messages');
         Route::get('/api/customers', [\App\Http\Controllers\Client\MessagesController::class, 'getCustomers'])->name('api.customers');
@@ -181,17 +185,17 @@ Route::prefix('client')->name('client.')->middleware(['web', App\Http\Middleware
         Route::post('/api/messages/{customer}', [\App\Http\Controllers\Client\MessagesController::class, 'sendMessage'])->name('api.send-message');
         Route::post('/api/messages/{customer}/read', [\App\Http\Controllers\Client\MessagesController::class, 'markAsRead'])->name('api.mark-read');
         Route::get('/api/messages/unread-count', [\App\Http\Controllers\Client\MessagesController::class, 'getUnreadCount'])->name('api.unread-count');
-        
+
         // Product Management routes
         Route::resource('products', \App\Http\Controllers\Client\ProductController::class);
-        
+
         // Product selection routes
         Route::get('/products/modal/{pageId}', [\App\Http\Controllers\Client\ProductController::class, 'getModalProducts'])->name('products.modal');
         Route::post('/messages/{customer}/send-products', [\App\Http\Controllers\Client\MessagesController::class, 'sendProductCarousel'])->name('messages.send-products');
-        
+
         // Products API for order creation (page-specific)
         Route::get('/api/products/{pageId}', [\App\Http\Controllers\Client\ProductController::class, 'getProductsJson'])->name('api.products');
-        
+
         // Workflow Management routes
         Route::prefix('workflows')->name('workflows.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Client\WorkflowController::class, 'index'])->name('index');
@@ -202,33 +206,15 @@ Route::prefix('client')->name('client.')->middleware(['web', App\Http\Middleware
             Route::get('/{workflow}/edit', [\App\Http\Controllers\Client\WorkflowController::class, 'edit'])->name('edit');
             Route::put('/{workflow}', [\App\Http\Controllers\Client\WorkflowController::class, 'update'])->name('update');
             Route::delete('/{workflow}', [\App\Http\Controllers\Client\WorkflowController::class, 'destroy'])->name('destroy');
-            
+
             // Workflow actions
             Route::patch('/{workflow}/publish', [\App\Http\Controllers\Client\WorkflowController::class, 'publish'])->name('publish');
             Route::patch('/{workflow}/unpublish', [\App\Http\Controllers\Client\WorkflowController::class, 'unpublish'])->name('unpublish');
-            
+
             // Analytics
             Route::get('/{workflow}/analytics', [\App\Http\Controllers\Client\WorkflowController::class, 'analytics'])->name('analytics');
         });
-        
-        // Customer Inquiries routes  
-        Route::prefix('inquiries')->name('inquiries.')->group(function () {
-                Route::get('/', [\App\Http\Controllers\Client\ChatBot\InquiryController::class, 'index'])->name('index');
-                Route::get('/{inquiry}', [\App\Http\Controllers\Client\ChatBot\InquiryController::class, 'show'])->name('show');
-                Route::patch('/{inquiry}/status', [\App\Http\Controllers\Client\ChatBot\InquiryController::class, 'updateStatus'])->name('update-status');
-                Route::delete('/{inquiry}', [\App\Http\Controllers\Client\ChatBot\InquiryController::class, 'destroy'])->name('destroy');
-                Route::patch('/{inquiry}/priority', [\App\Http\Controllers\Client\ChatBot\InquiryController::class, 'updatePriority'])->name('update-priority');
-                Route::post('/{inquiry}/notes', [\App\Http\Controllers\Client\ChatBot\InquiryController::class, 'addNote'])->name('add-note');
-                
-                // Bulk actions
-                Route::post('/bulk-update', [\App\Http\Controllers\Client\ChatBot\InquiryController::class, 'bulkUpdate'])->name('bulk-update');
-                Route::get('/export/{format}', [\App\Http\Controllers\Client\ChatBot\InquiryController::class, 'export'])->name('export');
-                
-                // API endpoints for datatables
-                Route::get('/api/list', [\App\Http\Controllers\Client\ChatBot\InquiryController::class, 'getInquiriesJson'])->name('api.list');
-            });
-        });
-        
+
         // Orders Management routes
         Route::prefix('orders')->name('orders.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Client\OrderController::class, 'index'])->name('index');
@@ -247,16 +233,16 @@ Route::prefix('client')->name('client.')->middleware(['web', App\Http\Middleware
             Route::post('/update-customers-from-facebook', [\App\Http\Controllers\Client\OrderController::class, 'updateCustomersFromFacebook'])->name('update-customers-from-facebook');
             Route::post('/update-all-customer-data', [\App\Http\Controllers\Client\OrderController::class, 'updateAllCustomerData'])->name('update-all-customer-data');
         });
-        
-        Route::get('/services', function() { 
+
+        Route::get('/services', function () {
             $services = collect(); // Services will be loaded via the relationship once defined
-            return view('client.services', compact('services')); 
+            return view('client.services', compact('services'));
         })->name('services');
-        
-        Route::get('/settings', function() { 
-            return view('client.settings'); 
+
+        Route::get('/settings', function () {
+            return view('client.settings');
         })->name('settings');
-        
+
         // Upgrade routes
         Route::prefix('upgrade')->name('upgrade.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Client\UpgradeController::class, 'index'])->name('index');
@@ -264,7 +250,7 @@ Route::prefix('client')->name('client.')->middleware(['web', App\Http\Middleware
             Route::post('/', [\App\Http\Controllers\Client\UpgradeController::class, 'store'])->name('store');
             Route::get('/{upgradeRequest}', [\App\Http\Controllers\Client\UpgradeController::class, 'show'])->name('show');
         });
-        
+
         // Settings routes
         Route::put('/settings', [\App\Http\Controllers\Client\SettingsController::class, 'updateAccount'])->name('settings.update');
         Route::put('/settings/password', [\App\Http\Controllers\Client\SettingsController::class, 'updatePassword'])->name('password.update');
@@ -281,7 +267,7 @@ Route::prefix('webhooks/facebook')->group(function () {
 });
 
 // Webhook test route to see if any requests hit the server
-Route::any('/webhook-test', function(\Illuminate\Http\Request $request) {
+Route::any('/webhook-test', function (\Illuminate\Http\Request $request) {
     \Illuminate\Support\Facades\Log::info('WEBHOOK TEST ENDPOINT HIT', [
         'method' => $request->method(),
         'ip' => $request->ip(),
@@ -294,10 +280,10 @@ Route::any('/webhook-test', function(\Illuminate\Http\Request $request) {
 });
 
 // Debug info endpoint
-Route::get('/debug-webhook', function() {
+Route::get('/debug-webhook', function () {
     $pages = \App\Models\FacebookPage::with('client')->get();
     $clients = \App\Models\Client::withCount(['customers', 'facebookPages'])->get();
-    
+
     $debugInfo = [
         'timestamp' => now(),
         'webhook_url' => url('/webhooks/facebook'),
@@ -308,7 +294,7 @@ Route::get('/debug-webhook', function() {
             'webhook_verify_token' => \App\Helpers\SettingsHelper::getFacebookWebhookVerifyToken(),
             'app_secret_set' => !empty(\App\Helpers\SettingsHelper::getFacebookAppSecret())
         ],
-        'clients' => $clients->map(function($client) {
+        'clients' => $clients->map(function ($client) {
             return [
                 'name' => $client->name,
                 'email' => $client->email,
@@ -316,7 +302,7 @@ Route::get('/debug-webhook', function() {
                 'pages_count' => $client->facebook_pages_count
             ];
         }),
-        'pages' => $pages->map(function($page) {
+        'pages' => $pages->map(function ($page) {
             return [
                 'page_name' => $page->page_name,
                 'page_id' => $page->page_id,
@@ -326,6 +312,6 @@ Route::get('/debug-webhook', function() {
             ];
         })
     ];
-    
+
     return response()->json($debugInfo, 200, [], JSON_PRETTY_PRINT);
 });
