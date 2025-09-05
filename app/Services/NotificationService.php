@@ -423,6 +423,10 @@ class NotificationService
             
             if ($response) {
                 $this->logNotification($order->id, 'invoice_sent', 'sent', $message);
+                
+                // Also create a CustomerMessage record so it appears in the chat
+                $this->createInvoiceMessage($order, $message, $invoiceUrl);
+                
                 return true;
             }
             
@@ -604,6 +608,44 @@ class NotificationService
                 'error' => $e->getMessage()
             ]);
             return false;
+        }
+    }
+    
+    private function createInvoiceMessage(Order $order, string $message, string $invoiceUrl): void
+    {
+        try {
+            $messageContent = "📋 Invoice #" . $order->order_number . "\n" . 
+                            "💰 Total: ৳" . number_format($order->total_amount, 2) . 
+                            ($invoiceUrl ? "\n🔗 " . $invoiceUrl : "");
+                            
+            Log::info('Creating invoice message with content', [
+                'order_id' => $order->id,
+                'message_content' => $messageContent,
+                'client_id' => $order->client_id,
+                'customer_id' => $order->customer_id,
+                'page_customer_id' => $order->page_customer_id
+            ]);
+            
+            // Create a CustomerMessage record so the invoice appears in the chat history
+            $customerMessage = \App\Models\CustomerMessage::create([
+                'client_id' => $order->client_id,
+                'customer_id' => $order->customer_id,
+                'page_customer_id' => $order->page_customer_id,
+                'message_content' => $messageContent,
+                'message_type' => 'outgoing',
+                'is_read' => true,
+            ]);
+            
+            Log::info('Created invoice message in chat history', [
+                'order_id' => $order->id,
+                'customer_id' => $order->customer_id
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to create invoice message in chat history', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 }

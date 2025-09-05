@@ -2335,13 +2335,12 @@ function sendInvoiceToCustomer(orderId) {
             if (response.success) {
                 showNotification('Invoice sent to customer via message!', 'success');
                 
-                // Refresh messages to show the sent invoice
+                // Refresh messages to show the sent invoice (small delay to ensure DB commit)
                 setTimeout(() => {
                     if (selectedCustomerId) {
-                        // Reload the page to show updated messages
-                        window.location.reload();
+                        loadMessages(selectedCustomerId);
                     }
-                }, 1000);
+                }, 200);
             } else {
                 console.log('Invoice sending failed:', response.message);
                 showNotification('Order created but failed to send invoice: ' + (response.message || 'Unknown error'), 'warning');

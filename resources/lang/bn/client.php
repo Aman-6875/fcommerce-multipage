@@ -134,6 +134,7 @@ return [
     'total_revenue' => 'মোট আয়',
     'cod' => 'COD',
     'create_order' => 'অর্ডার তৈরি করুন',
+    'creating_order' => 'অর্ডার তৈরি হচ্ছে',
     'create_first_order' => 'প্রথম অর্ডার তৈরি করুন',
     'create_new_order' => 'নতুন অর্ডার তৈরি করুন',
     'orders_will_appear_here' => 'আপনার গ্রাহকদের অর্ডারগুলি এখানে প্রদর্শিত হবে।',

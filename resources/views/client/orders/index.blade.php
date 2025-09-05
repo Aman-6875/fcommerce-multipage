@@ -581,7 +581,7 @@
                         <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">
                             <i class="fas fa-times me-1"></i>{{ __('common.cancel') }}
                         </button>
-                        <button type="button" class="btn btn-primary" onclick="createOrder()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                        <button type="button" class="btn btn-primary" onclick="createOrder()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;" id="createOrderButton">
                             <i class="fas fa-save me-1"></i> {{ __('client.create_order') }}
                         </button>
                     </div>
@@ -631,6 +631,13 @@
 .modal-xl {
     max-width: 95% !important;
     width: 95% !important;
+}
+
+/* Disabled button styling */
+#createOrderButton:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
 }
 
 @media (min-width: 1200px) {
@@ -924,6 +931,11 @@ function createOrder() {
         return;
     }
     
+    // Disable the create order button and show loading state
+    const createButton = $('#createOrderButton');
+    const originalText = createButton.html();
+    createButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> {{ __("client.creating_order") }}...');
+    
     $.ajax({
         url: '{{ route("client.orders.store") }}',
         method: 'POST',
@@ -938,6 +950,9 @@ function createOrder() {
             location.reload();
         },
         error: function(xhr) {
+            // Restore button state
+            createButton.prop('disabled', false).html(originalText);
+            
             if (xhr.status === 422) {
                 const errors = xhr.responseJSON.errors;
                 let errorMessage = '{{ __("common.validation_errors") }}:\n';
@@ -947,6 +962,12 @@ function createOrder() {
                 alert(errorMessage);
             } else {
                 alert('{{ __("common.error_occurred") }}: ' + xhr.responseText);
+            }
+        },
+        complete: function() {
+            // Always restore button state when request completes (backup)
+            if (createButton.prop('disabled')) {
+                createButton.prop('disabled', false).html(originalText);
             }
         }
     });

@@ -56,13 +56,20 @@ class OrderService
             $totalAmount = $finalSubtotal + $shippingCharge;
             $advancePayment = $data['advance_payment'] ?? 0;
             
-            // Get Facebook page ID if provided
+            // Get Facebook page ID - use provided one or client's selected page
             $facebookPageId = null;
             if (!empty($data['facebook_page_id']) && $data['facebook_page_id'] !== '') {
+                // Message panel provides specific facebook_page_id
                 $facebookPage = FacebookPage::where('id', $data['facebook_page_id'])
                     ->where('client_id', $client->id)
                     ->first();
                 $facebookPageId = $facebookPage ? $facebookPage->id : null;
+            } else {
+                // Order panel - use client's selected page
+                $selectedPageId = $client->getSelectedPageId();
+                if ($selectedPageId) {
+                    $facebookPageId = $selectedPageId;
+                }
             }
               
             // Create order

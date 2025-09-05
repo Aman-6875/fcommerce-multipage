@@ -87,6 +87,7 @@ return [
     'create_new' => 'Create New',
     'close' => 'Close',
     'select_product' => 'Select Product',
+    'select_facebook_page' => 'Select Facebook Page',
     'notes' => 'Notes',
     'confirm' => 'Confirm',
     'cancel' => 'Cancel',
