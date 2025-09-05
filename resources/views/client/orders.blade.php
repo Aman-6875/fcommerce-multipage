@@ -20,6 +20,34 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <!-- Session Messages -->
+                    @if(session('success'))
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+
+                    @if(session('error'))
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+
+                    @if($errors->any())
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>{{ __('common.validation_errors') }}:</strong>
+                            <ul class="mb-0 mt-2">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+
                     <!-- Order Stats -->
                     <div class="row mb-4">
                         <div class="col-md-2">
@@ -246,28 +274,28 @@
                                                         </button>
                                                         <ul class="dropdown-menu">
                                                             @if($order->status === 'pending')
-                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus({{ $order->id }}, 'confirmed')">
+                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus({{ $order->id }}, 'confirmed'); return false;">
                                                                     <i class="fas fa-check text-success"></i> {{ __('common.confirm') }}
                                                                 </a></li>
                                                             @endif
                                                             @if($order->status === 'confirmed')
-                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus({{ $order->id }}, 'processing')">
+                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus({{ $order->id }}, 'processing'); return false;">
                                                                     <i class="fas fa-cog text-info"></i> {{ __('common.processing') }}
                                                                 </a></li>
                                                             @endif
                                                             @if($order->status === 'processing')
-                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus({{ $order->id }}, 'shipped')">
+                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus({{ $order->id }}, 'shipped'); return false;">
                                                                     <i class="fas fa-truck text-primary"></i> {{ __('common.shipped') }}
                                                                 </a></li>
                                                             @endif
                                                             @if($order->status === 'shipped')
-                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus({{ $order->id }}, 'delivered')">
+                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus({{ $order->id }}, 'delivered'); return false;">
                                                                     <i class="fas fa-check-circle text-success"></i> {{ __('common.delivered') }}
                                                                 </a></li>
                                                             @endif
                                                             @if(!in_array($order->status, ['delivered', 'cancelled']))
                                                                 <li><hr class="dropdown-divider"></li>
-                                                                <li><a class="dropdown-item text-danger" href="#" onclick="updateStatus({{ $order->id }}, 'cancelled')">
+                                                                <li><a class="dropdown-item text-danger" href="#" onclick="updateStatus({{ $order->id }}, 'cancelled'); return false;">
                                                                     <i class="fas fa-times"></i> {{ __('common.cancel') }}
                                                                 </a></li>
                                                             @endif
@@ -812,20 +840,31 @@ function createOrder() {
 }
 
 function updateStatus(orderId, status) {
-    if(confirm('Are you sure you want to change the order status to ' + status + '?')) {
+    console.log('updateStatus called with:', orderId, status);
+    
+    if(confirm(`{{ __('client.confirm_status_change') }} ${status}?`)) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '/client/orders/' + orderId + '/status';
         
+        console.log('Form action:', form.action);
+        
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        console.log('CSRF Token:', csrfToken ? 'Found' : 'Missing');
+        
         form.innerHTML = `
             <input type="hidden" name="_token" value="${csrfToken}">
             <input type="hidden" name="_method" value="PATCH">
             <input type="hidden" name="status" value="${status}">
         `;
         
+        console.log('Form HTML:', form.innerHTML);
+        
         document.body.appendChild(form);
+        console.log('About to submit form...');
         form.submit();
+    } else {
+        console.log('User cancelled status update');
     }
 }
 

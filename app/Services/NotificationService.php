@@ -66,13 +66,13 @@ class NotificationService
                 return false;
             }
             
-            $response = $this->facebookService->sendMessage(
+            $response = $this->facebookService->sendTextMessage(
+                $facebookPage->access_token,
                 $order->customer->facebook_user_id,
-                $message,
-                $facebookPage->access_token
+                $message
             );
             
-            if ($response) {
+            if ($response['success'] ?? false) {
                 $this->logNotification($order->id, 'regular_message', 'sent', $message);
                 return true;
             }
@@ -231,18 +231,51 @@ class NotificationService
     
     private function getStatusUpdateMessage(Order $order, string $oldStatus, string $newStatus): string
     {
-        $customerName = $order->customer_info['name'] ?? 'Valued Customer';
+        // Get client's preferred language from settings, default to 'bn'
+        $clientLanguage = $order->client->settings['language'] ?? 'bn';
+        
+        $customerName = $order->customer_info['name'] ?? __('client.valued_customer', [], $clientLanguage);
         $orderNumber = $order->order_number;
+        $totalAmount = number_format($order->total_amount, 2);
+        
+        // Get business name from Facebook page or default
+        $businessName = $order->facebookPage->page_name ?? $order->client->name ?? config('app.name');
         
         $statusMessages = [
-            'confirmed' => "✅ Great news {$customerName}! Your order #{$orderNumber} has been confirmed and is now being prepared.",
-            'processing' => "📦 Hi {$customerName}! Your order #{$orderNumber} is now being processed. We'll update you once it's ready for shipping.",
-            'shipped' => "🚛 Exciting news {$customerName}! Your order #{$orderNumber} has been shipped and is on its way to you. You'll receive it soon!",
-            'delivered' => "🎉 Congratulations {$customerName}! Your order #{$orderNumber} has been delivered. We hope you love your purchase!",
-            'cancelled' => "❌ Hi {$customerName}, unfortunately your order #{$orderNumber} has been cancelled. Please contact us if you have any questions."
+            'confirmed' => "✅ " . __('client.order_confirmed_message', [
+                'customer_name' => $customerName,
+                'order_number' => $orderNumber,
+                'total_amount' => $totalAmount,
+                'business_name' => $businessName
+            ], $clientLanguage),
+            'processing' => "📦 " . __('client.order_processing_message', [
+                'customer_name' => $customerName,
+                'order_number' => $orderNumber,
+                'business_name' => $businessName
+            ], $clientLanguage),
+            'shipped' => "🚛 " . __('client.order_shipped_message', [
+                'customer_name' => $customerName,
+                'order_number' => $orderNumber,
+                'business_name' => $businessName
+            ], $clientLanguage),
+            'delivered' => "🎉 " . __('client.order_delivered_message', [
+                'customer_name' => $customerName,
+                'order_number' => $orderNumber,
+                'business_name' => $businessName
+            ], $clientLanguage),
+            'cancelled' => "❌ " . __('client.order_cancelled_message', [
+                'customer_name' => $customerName,
+                'order_number' => $orderNumber,
+                'business_name' => $businessName
+            ], $clientLanguage)
         ];
         
-        return $statusMessages[$newStatus] ?? "📋 Hi {$customerName}! Your order #{$orderNumber} status has been updated to: " . ucfirst($newStatus);
+        return $statusMessages[$newStatus] ?? __('client.order_status_updated_message', [
+            'customer_name' => $customerName,
+            'order_number' => $orderNumber,
+            'status' => __('common.' . strtolower($newStatus), [], $clientLanguage),
+            'business_name' => $businessName
+        ], $clientLanguage);
     }
     
     private function getOrderUpdateTemplate(Order $order): array

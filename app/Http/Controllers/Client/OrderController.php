@@ -11,6 +11,7 @@ use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Vinkla\Hashids\Facades\Hashids;
 
@@ -213,11 +214,22 @@ class OrderController extends Controller
 
     public function updateStatus(Request $request, Order $order)
     {
+        \Log::info('UpdateStatus method called', [
+            'order_id' => $order->id,
+            'current_status' => $order->status,
+            'request_data' => $request->all(),
+            'client_id' => auth('client')->id()
+        ]);
+        
         // Check authorization manually since we're using client guard (use loose comparison for type safety)
         if (auth('client')->id() != $order->client_id) {
+            \Log::error('Authorization failed', [
+                'client_id' => auth('client')->id(),
+                'order_client_id' => $order->client_id
+            ]);
             abort(403, 'This action is unauthorized.');
         }
-        
+   
         $validated = $request->validate([
             'status' => ['required', Rule::in(['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'])],
             'notes' => 'nullable|string|max:500'
@@ -228,24 +240,77 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
             
-            $order->update([
-                'status' => $validated['status'],
-                'notes' => $validated['notes'] ? $order->notes . "\n" . $validated['notes'] : $order->notes,
+            Log::info('Updating order status', [
+                'order_id' => $order->id,
+                'old_status' => $oldStatus,
+                'new_status' => $validated['status']
+            ]);
+            
+            Log::info('After first log statement');
+            
+            Log::info('Checking order notes', ['current_notes' => $order->notes]);
+            
+            Log::info('Checking validated notes', ['validated_notes' => $validated['notes'] ?? 'NOT_SET']);
+            
+            $notesToUpdate = isset($validated['notes']) && $validated['notes'] ? $order->notes . "\n" . $validated['notes'] : $order->notes;
+            
+            Log::info('About to call update method', [
+                'current_order_status' => $order->status,
+                'update_data' => [
+                    'status' => $validated['status'],
+                    'notes' => $notesToUpdate,
+                ]
+            ]);
+            
+            try {
+                $updateResult = $order->update([
+                    'status' => $validated['status'],
+                    'notes' => $notesToUpdate,
+                ]);
+                Log::info('Update call completed', ['result' => $updateResult]);
+            } catch (\Exception $updateException) {
+                Log::error('Update failed with exception', [
+                    'error' => $updateException->getMessage(),
+                    'trace' => $updateException->getTraceAsString()
+                ]);
+                throw $updateException;
+            }
+            
+            Log::info('Order update result', [
+                'order_id' => $order->id,
+                'update_result' => $updateResult,
+                'status_before_refresh' => $order->status,
+            ]);
+            
+            $order->refresh();
+            
+            Log::info('Order updated successfully', [
+                'order_id' => $order->id,
+                'updated_status' => $order->status,
+                'fresh_status' => $order->fresh()->status
             ]);
 
             if ($validated['status'] === 'confirmed' && !$order->confirmed_at) {
+                Log::info('Updating confirmed_at timestamp');
                 $order->update(['confirmed_at' => now()]);
             } elseif ($validated['status'] === 'shipped' && !$order->shipped_at) {
+                Log::info('Updating shipped_at timestamp');
                 $order->update(['shipped_at' => now()]);
             } elseif ($validated['status'] === 'delivered' && !$order->delivered_at) {
+                Log::info('Updating delivered_at timestamp');
                 $order->update(['delivered_at' => now()]);
             }
             
+            Log::info('About to commit transaction');
             DB::commit();
+            Log::info('Transaction committed successfully');
             
             // Send notification to customer about status change
+            Log::info('About to send customer notification');
             $this->notificationService->sendOrderStatusUpdate($order, $oldStatus, $validated['status']);
+            Log::info('Customer notification sent');
             
+            Log::info('About to return success response');
             return redirect()->back()->with('success', __('client.order_status_updated_successfully'));
             
         } catch (\Exception $e) {

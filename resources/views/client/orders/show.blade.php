@@ -200,7 +200,7 @@
                                         </tr>
                                         @if($order->discount_amount > 0)
                                         <tr>
-                                            <td>{{ __('client.order_discount') }} ({{ ucfirst($order->discount_type) }}):</td>
+                                            <td>{{ __('client.order_discount') }} ({{ __('client.'.strtolower($order->discount_type)) }}):</td>
                                             <td class="text-end text-danger">-৳{{ number_format($order->discount_amount, 2) }}</td>
                                         </tr>
                                         @endif
@@ -313,7 +313,7 @@
 function updateOrderStatus(orderId, newStatus) {
     if (!newStatus) return;
     
-    if(confirm(`Are you sure you want to change the order status to ${newStatus}?`)) {
+    if(confirm(`{{ __('client.confirm_status_change') }} ${newStatus}?`)) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = `/client/orders/${orderId}/status`;

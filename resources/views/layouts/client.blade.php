@@ -578,7 +578,7 @@
                 <div class="icon_menu">
                     <i class="fas fa-shopping-bag" style="font-size: 18px; color: #667eea;"></i>
                 </div>
-                <span>Products</span>
+                <span>{{ __('client.products') }}</span>
                 <span class="badge badge-info">{{ auth('client')->user()->products()->where('is_active', true)->count() }}</span>
             </a>
         </li>
@@ -588,7 +588,7 @@
                 <div class="icon_menu">
                     <i class="fas fa-project-diagram" style="font-size: 18px; color: #4facfe;"></i>
                 </div>
-                <span>Workflows</span>
+                <span>{{ __('client.workflows') }}</span>
                 @php
                     $activeWorkflows = auth('client')->user()->workflows()->where('is_active', true)->count();
                 @endphp

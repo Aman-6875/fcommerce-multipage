@@ -174,7 +174,37 @@ Route::prefix('client')->name('client.')->middleware(['web', App\Http\Middleware
         Route::get('/facebook-pages', [FacebookController::class, 'index'])->name('facebook-pages'); // Backward compatibility
 
         Route::get('/customers', function () {
-            $customers = collect(); // Customers will be loaded via the relationship once defined
+            $activePageId = getActiveSessionPageId();
+            
+            if (!$activePageId) {
+                // If no page selected, redirect to Facebook pages
+                return redirect()->route('client.facebook-pages')
+                    ->with('error', 'Please select a Facebook page first.');
+            }
+            
+            // Get customers only from the selected page
+            $pageCustomers = \App\Models\PageCustomer::where('facebook_page_id', $activePageId)
+                ->with(['customer', 'facebookPage'])
+                ->orderBy('last_interaction', 'desc')
+                ->get();
+            
+            $customers = collect();
+            
+            foreach ($pageCustomers as $pageCustomer) {
+                if ($pageCustomer->customer && $pageCustomer->facebookPage) {
+                    $customer = $pageCustomer->customer;
+                    $customer->current_page_name = $pageCustomer->facebookPage->page_name;
+                    $customer->current_page_id = $pageCustomer->facebookPage->page_id;
+                    
+                    // Get page-specific message count
+                    $customer->page_messages_count = \App\Models\CustomerMessage::where('customer_id', $customer->id)
+                        ->where('page_customer_id', $pageCustomer->id)
+                        ->count();
+                    
+                    $customers->push($customer);
+                }
+            }
+            
             return view('client.customers', compact('customers'));
         })->name('customers');
 

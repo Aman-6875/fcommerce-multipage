@@ -20,7 +20,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    @if($customers->count() > 0)
+                    @if($customers && $customers->count() > 0)
                         <!-- Search and Filter -->
                         <div class="row mb-4">
                             <div class="col-md-4">
@@ -34,16 +34,7 @@
                                     <option value="unsubscribed">{{ __('common.unsubscribed') }}</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <select class="form-control" id="pageFilter">
-                                    <option value="">{{ __('common.all_pages') }}</option>
-                                    @if(auth('client')->user()->facebookPages->count() > 0)
-                                        @foreach(auth('client')->user()->facebookPages as $page)
-                                            <option value="{{ $page->page_id }}">{{ $page->page_name }}</option>
-                                        @endforeach
-                                    @endif
-                                </select>
-                            </div>
+                            <!-- <div class="col-md-5"></div> -->
                             <div class="col-md-2">
                                 <button class="btn btn-outline-secondary" onclick="resetFilters()">
                                     <i class="fas fa-sync"></i>
@@ -53,16 +44,16 @@
 
                         <!-- Customers Table -->
                         <div class="table-responsive">
-                            <table class="table table-striped" id="customersTable">
-                                <thead>
+                            <table class="table table-striped table-hover" id="customersTable" style="font-size: 14px;">
+                                <thead class="bg-light">
                                     <tr>
-                                        <th>{{ __('common.customer') }}</th>
-                                        <th>{{ __('common.contact') }}</th>
-                                        <th>{{ __('common.page') }}</th>
-                                        <th>{{ __('common.last_interaction') }}</th>
-                                        <th>{{ __('common.orders') }}</th>
-                                        <th>{{ __('common.status') }}</th>
-                                        <th>{{ __('common.actions') }}</th>
+                                        <th style="width: 25%; color: black;">{{ __('common.customer') }}</th>
+                                        <th style="width: 20%; color: black;">{{ __('common.contact') }}</th>
+                                        <th style="width: 15%; color: black;">{{ __('common.page') }}</th>
+                                        <th style="width: 20%; color: black;">{{ __('common.last_interaction') }}</th>
+                                        <th style="width: 10%; color: black;">{{ __('common.orders') }}</th>
+                                        <th style="width: 10%; color: black;">{{ __('common.status') }}</th>
+                                        <th style="width: 10%; color: black;">{{ __('common.actions') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -73,54 +64,59 @@
                                                 @if($customer->profile_data['profile_picture'] ?? null)
                                                     <img src="{{ $customer->profile_data['profile_picture'] }}" alt="Profile" class="rounded-circle me-2" width="32" height="32">
                                                 @else
-                                                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
-                                                        <i class="fas fa-user text-white"></i>
+                                                    <div class="bg-dark border rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                                                        <i class="fas fa-user text-light"></i>
                                                     </div>
                                                 @endif
                                                 <div>
                                                     <div class="font-weight-bold">{{ $customer->name }}</div>
-                                                    <small class="text-muted">ID: {{ $customer->id }}</small>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
                                             @if($customer->phone)
-                                                <div><i class="fas fa-phone text-success"></i> {{ $customer->phone }}</div>
+                                                <div class="mb-1">
+                                                    <i class="fas fa-phone text-success me-1"></i> 
+                                                    <span>{{ $customer->phone }}</span>
+                                                </div>
                                             @endif
                                             @if($customer->email)
-                                                <div><i class="fas fa-envelope text-primary"></i> {{ $customer->email }}</div>
+                                                <div class="mb-1">
+                                                    <i class="fas fa-envelope text-primary me-1"></i> 
+                                                    <span style="font-size: 12px;">{{ $customer->email }}</span>
+                                                </div>
                                             @endif
                                             @if(!$customer->phone && !$customer->email)
                                                 <span class="text-muted">No contact info</span>
                                             @endif
                                         </td>
                                         <td>
-                                            @if($customer->profile_data['page_name'] ?? null)
-                                                <span class="badge badge-info">{{ $customer->profile_data['page_name'] }}</span>
+                                            @if(isset($customer->current_page_name) && $customer->current_page_name !== 'Unknown')
+                                                <span class="badge badge-info" style="color: black;">{{ $customer->current_page_name }}</span>
                                             @else
-                                                <span class="text-muted">Unknown</span>
+                                                <span class="text-muted">No Page</span>
                                             @endif
                                         </td>
                                         <td>
                                             <div>{{ $customer->last_interaction ? $customer->last_interaction->diffForHumans() : 'Never' }}</div>
-                                            <small class="text-muted">Messages: {{ $customer->messages()->count() }}</small>
+                                            <small class="text-muted">Messages: {{ $customer->page_messages_count ?? 0 }}</small>
                                         </td>
                                         <td>
-                                            <span class="badge badge-secondary">{{ $customer->orders()->count() }}</span>
+                                            <span class="badge bg-light text-dark border px-2 py-1">{{ $customer->orders()->count() }}</span>
                                         </td>
                                         <td>
                                             @switch($customer->status)
                                                 @case('active')
-                                                    <span class="badge badge-success">Active</span>
+                                                    <span class="badge bg-success text-dark px-2 py-1">Active</span>
                                                     @break
                                                 @case('blocked')
-                                                    <span class="badge badge-danger">Blocked</span>
+                                                    <span class="badge bg-danger text-dark px-2 py-1">Blocked</span>
                                                     @break
                                                 @case('unsubscribed')
-                                                    <span class="badge badge-warning">Unsubscribed</span>
+                                                    <span class="badge bg-warning text-dark px-2 py-1">Unsubscribed</span>
                                                     @break
                                                 @default
-                                                    <span class="badge badge-secondary">{{ $customer->status }}</span>
+                                                    <span class="badge bg-secondary text-dark px-2 py-1">{{ ucfirst($customer->status) }}</span>
                                             @endswitch
                                         </td>
                                         <td>
@@ -264,7 +260,7 @@ $(document).ready(function() {
     });
     
     // Filter functionality
-    $('#statusFilter, #pageFilter').on('change', function() {
+    $('#statusFilter').on('change', function() {
         filterCustomers();
     });
     
@@ -330,13 +326,11 @@ function loadCustomers() {
 function filterCustomers() {
     var searchTerm = $('#customerSearch').val().toLowerCase();
     var statusFilter = $('#statusFilter').val();
-    var pageFilter = $('#pageFilter').val();
     
     $('#customersTable tbody tr').each(function() {
         var row = $(this);
         var customerName = row.find('td:first .font-weight-bold').text().toLowerCase();
         var customerStatus = row.find('td:nth-child(6) .badge').text().toLowerCase();
-        var customerPage = row.find('td:nth-child(3) .badge').text();
         
         var showRow = true;
         
@@ -347,11 +341,6 @@ function filterCustomers() {
         
         // Status filter
         if (statusFilter && customerStatus !== statusFilter.toLowerCase()) {
-            showRow = false;
-        }
-        
-        // Page filter
-        if (pageFilter && customerPage.indexOf(pageFilter) === -1) {
             showRow = false;
         }
         
@@ -366,7 +355,6 @@ function filterCustomers() {
 function resetFilters() {
     $('#customerSearch').val('');
     $('#statusFilter').val('');
-    $('#pageFilter').val('');
     filterCustomers();
 }
 
