@@ -211,33 +211,8 @@ Route::prefix('client')->name('client.')->middleware(['web', App\Http\Middleware
             Route::get('/{workflow}/analytics', [\App\Http\Controllers\Client\WorkflowController::class, 'analytics'])->name('analytics');
         });
         
-        // Chatbot & FAQ Management routes  
-        Route::prefix('chat-bot')->name('chat-bot.')->group(function () {
-            // FAQ Management
-            Route::prefix('faqs')->name('faqs.')->group(function () {
-                Route::get('/', [\App\Http\Controllers\Client\ChatBot\FaqController::class, 'index'])->name('index');
-                Route::get('/create', [\App\Http\Controllers\Client\ChatBot\FaqController::class, 'create'])->name('create');
-                Route::post('/', [\App\Http\Controllers\Client\ChatBot\FaqController::class, 'store'])->name('store');
-                Route::get('/{faq}/edit', [\App\Http\Controllers\Client\ChatBot\FaqController::class, 'edit'])->name('edit');
-                Route::put('/{faq}', [\App\Http\Controllers\Client\ChatBot\FaqController::class, 'update'])->name('update');
-                Route::delete('/{faq}', [\App\Http\Controllers\Client\ChatBot\FaqController::class, 'destroy'])->name('destroy');
-                
-                // FAQ Actions
-                Route::patch('/{faq}/toggle-status', [\App\Http\Controllers\Client\ChatBot\FaqController::class, 'toggleStatus'])->name('toggle-status');
-                Route::post('/reorder', [\App\Http\Controllers\Client\ChatBot\FaqController::class, 'reorder'])->name('reorder');
-                Route::post('/quick-setup', [\App\Http\Controllers\Client\ChatBot\FaqController::class, 'quickSetup'])->name('quick-setup');
-            });
-            
-            // Business Settings
-            Route::prefix('settings')->name('settings.')->group(function () {
-                Route::get('/', [\App\Http\Controllers\Client\ChatBot\SettingsController::class, 'index'])->name('index');
-                Route::post('/update', [\App\Http\Controllers\Client\ChatBot\SettingsController::class, 'update'])->name('update');
-                Route::post('/reset-defaults', [\App\Http\Controllers\Client\ChatBot\SettingsController::class, 'resetDefaults'])->name('reset-defaults');
-                Route::get('/preview/{language?}', [\App\Http\Controllers\Client\ChatBot\SettingsController::class, 'preview'])->name('preview');
-            });
-            
-            // Customer Inquiries
-            Route::prefix('inquiries')->name('inquiries.')->group(function () {
+        // Customer Inquiries routes  
+        Route::prefix('inquiries')->name('inquiries.')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Client\ChatBot\InquiryController::class, 'index'])->name('index');
                 Route::get('/{inquiry}', [\App\Http\Controllers\Client\ChatBot\InquiryController::class, 'show'])->name('show');
                 Route::patch('/{inquiry}/status', [\App\Http\Controllers\Client\ChatBot\InquiryController::class, 'updateStatus'])->name('update-status');
